@@ -7,11 +7,6 @@ const badges = [
     description: "100% genuine & energised items",
   },
   {
-    icon: Truck,
-    title: "Pan India Delivery",
-    description: "Free shipping above ₹999",
-  },
-  {
     icon: RotateCcw,
     title: "Easy Returns",
     description: "14-day hassle-free returns",

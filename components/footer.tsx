@@ -5,15 +5,15 @@ import { Button } from "@/components/ui/button"
 export function Footer() {
   return (
     <footer className="bg-secondary border-t border-border">
-      <div className="container mx-auto px-4 py-12 lg:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+      <div className="container mx-auto px-4 py-8 sm:py-12 lg:py-16">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8 lg:gap-12">
           {/* Brand */}
-          <div className="lg:col-span-1">
-            <Link href="/" className="inline-block mb-4">
-              <span className="text-2xl font-serif font-bold text-primary">Shri Aaum</span>
+          <div className="col-span-2 sm:col-span-2 lg:col-span-1">
+            <Link href="/" className="inline-block mb-2 sm:mb-4">
+              <span className="text-lg sm:text-2xl font-serif font-bold text-primary">Shri Aaum</span>
             </Link>
-            <p className="text-muted-foreground text-sm leading-relaxed mb-6">
-              Your trusted destination for authentic spiritual products. We bring divine blessings to your doorstep with carefully curated puja items, idols, and sacred scriptures.
+            <p className="text-muted-foreground text-xs sm:text-sm leading-relaxed mb-4 sm:mb-6">
+              Your trusted destination for authentic spiritual products. Divine blessings at your doorstep.
             </p>
             <div className="flex gap-4">
               <a href="#" className="text-muted-foreground hover:text-primary transition-colors" aria-label="Facebook">
@@ -30,30 +30,30 @@ export function Footer() {
 
           {/* Quick Links */}
           <div>
-            <h3 className="font-serif font-semibold text-foreground mb-4">Quick Links</h3>
-            <ul className="space-y-3">
+            <h3 className="text-xs sm:text-base font-serif font-semibold text-foreground mb-2 sm:mb-4">Quick Links</h3>
+            <ul className="space-y-1.5 sm:space-y-3">
               <li>
-                <Link href="/category/puja-items" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                <Link href="/category/puja-items" className="text-[11px] sm:text-sm text-muted-foreground hover:text-primary transition-colors">
                   Puja Items
                 </Link>
               </li>
               <li>
-                <Link href="/category/idols" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                <Link href="/category/idols" className="text-[11px] sm:text-sm text-muted-foreground hover:text-primary transition-colors">
                   Idols & Murtis
                 </Link>
               </li>
               <li>
-                <Link href="/category/gemstones" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                <Link href="/category/gemstones" className="text-[11px] sm:text-sm text-muted-foreground hover:text-primary transition-colors">
                   Gemstones & Malas
                 </Link>
               </li>
               <li>
-                <Link href="/category/books" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                <Link href="/category/books" className="text-[11px] sm:text-sm text-muted-foreground hover:text-primary transition-colors">
                   Books & Scriptures
                 </Link>
               </li>
               <li>
-                <Link href="/new-arrivals" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                <Link href="/new-arrivals" className="text-[11px] sm:text-sm text-muted-foreground hover:text-primary transition-colors">
                   New Arrivals
                 </Link>
               </li>
@@ -62,30 +62,30 @@ export function Footer() {
 
           {/* Customer Service */}
           <div>
-            <h3 className="font-serif font-semibold text-foreground mb-4">Customer Service</h3>
-            <ul className="space-y-3">
+            <h3 className="text-xs sm:text-base font-serif font-semibold text-foreground mb-2 sm:mb-4">Customer Service</h3>
+            <ul className="space-y-1.5 sm:space-y-3">
               <li>
-                <Link href="/track-order" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                <Link href="/track-order" className="text-[11px] sm:text-sm text-muted-foreground hover:text-primary transition-colors">
                   Track Your Order
                 </Link>
               </li>
               <li>
-                <Link href="/shipping" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                <Link href="/shipping" className="text-[11px] sm:text-sm text-muted-foreground hover:text-primary transition-colors">
                   Shipping Information
                 </Link>
               </li>
               <li>
-                <Link href="/returns" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                <Link href="/returns" className="text-[11px] sm:text-sm text-muted-foreground hover:text-primary transition-colors">
                   Returns & Exchange
                 </Link>
               </li>
               <li>
-                <Link href="/faq" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                <Link href="/faq" className="text-[11px] sm:text-sm text-muted-foreground hover:text-primary transition-colors">
                   FAQs
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                <Link href="/contact" className="text-[11px] sm:text-sm text-muted-foreground hover:text-primary transition-colors">
                   Contact Us
                 </Link>
               </li>
@@ -93,27 +93,27 @@ export function Footer() {
           </div>
 
           {/* Newsletter */}
-          <div>
-            <h3 className="font-serif font-semibold text-foreground mb-4">Stay Connected</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Subscribe to receive updates on new arrivals, festive offers, and spiritual insights.
+          <div className="col-span-2 sm:col-span-1">
+            <h3 className="text-xs sm:text-base font-serif font-semibold text-foreground mb-2 sm:mb-4">Stay Connected</h3>
+            <p className="text-[11px] sm:text-sm text-muted-foreground mb-3 sm:mb-4">
+              Subscribe to receive updates on new arrivals and festive offers.
             </p>
             <form className="flex gap-2">
               <Input
                 type="email"
                 placeholder="Enter your email"
-                className="flex-1"
+                className="flex-1 h-8 sm:h-10 text-xs sm:text-sm"
               />
-              <Button type="submit" className="shrink-0">
+              <Button type="submit" className="shrink-0 h-8 sm:h-10 text-xs sm:text-sm px-3 sm:px-4">
                 Subscribe
               </Button>
             </form>
-            <div className="mt-6">
-              <p className="text-sm font-medium text-foreground mb-2">Need Help?</p>
-              <p className="text-sm text-muted-foreground">
+            <div className="mt-4 sm:mt-6">
+              <p className="text-[11px] sm:text-sm font-medium text-foreground mb-1 sm:mb-2">Need Help?</p>
+              <p className="text-[11px] sm:text-sm text-muted-foreground">
                 WhatsApp: +91 98765 43210
               </p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-[11px] sm:text-sm text-muted-foreground">
                 Email: support@shriaaum.com
               </p>
             </div>
@@ -121,29 +121,29 @@ export function Footer() {
         </div>
 
         {/* Bottom */}
-        <div className="border-t border-border mt-12 pt-8">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-muted-foreground">
+        <div className="border-t border-border mt-6 sm:mt-12 pt-4 sm:pt-8">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-3 sm:gap-4">
+            <p className="text-[10px] sm:text-sm text-muted-foreground">
               © 2026 Shri Aaum. All rights reserved.
             </p>
-            <div className="flex flex-wrap justify-center gap-4 text-sm">
-              <Link href="/privacy" className="text-muted-foreground hover:text-primary transition-colors">
+            <div className="flex flex-wrap justify-center gap-3 sm:gap-4">
+              <Link href="/privacy" className="text-[10px] sm:text-sm text-muted-foreground hover:text-primary transition-colors">
                 Privacy Policy
               </Link>
-              <Link href="/terms" className="text-muted-foreground hover:text-primary transition-colors">
+              <Link href="/terms" className="text-[10px] sm:text-sm text-muted-foreground hover:text-primary transition-colors">
                 Terms of Service
               </Link>
-              <Link href="/refund" className="text-muted-foreground hover:text-primary transition-colors">
+              <Link href="/refund" className="text-[10px] sm:text-sm text-muted-foreground hover:text-primary transition-colors">
                 Refund Policy
               </Link>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">We accept:</span>
-              <div className="flex gap-2">
-                <div className="w-10 h-6 bg-muted rounded flex items-center justify-center text-[10px] font-medium">UPI</div>
-                <div className="w-10 h-6 bg-muted rounded flex items-center justify-center text-[10px] font-medium">VISA</div>
-                <div className="w-10 h-6 bg-muted rounded flex items-center justify-center text-[10px] font-medium">MC</div>
-                <div className="w-10 h-6 bg-muted rounded flex items-center justify-center text-[10px] font-medium">COD</div>
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <span className="text-[10px] sm:text-sm text-muted-foreground">We accept:</span>
+              <div className="flex gap-1 sm:gap-2">
+                <div className="w-8 h-5 sm:w-10 sm:h-6 bg-muted rounded flex items-center justify-center text-[8px] sm:text-[10px] font-medium">UPI</div>
+                <div className="w-8 h-5 sm:w-10 sm:h-6 bg-muted rounded flex items-center justify-center text-[8px] sm:text-[10px] font-medium">VISA</div>
+                <div className="w-8 h-5 sm:w-10 sm:h-6 bg-muted rounded flex items-center justify-center text-[8px] sm:text-[10px] font-medium">MC</div>
+                <div className="w-8 h-5 sm:w-10 sm:h-6 bg-muted rounded flex items-center justify-center text-[8px] sm:text-[10px] font-medium">COD</div>
               </div>
             </div>
           </div>

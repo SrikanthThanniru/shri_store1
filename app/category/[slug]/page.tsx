@@ -1,7 +1,10 @@
+"use client"
+
+import { useState, useEffect, use } from "react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { ProductCard } from "@/components/product-card"
-import { ProductFilters } from "@/components/product-filters"
+import { ProductFilters, type FilterState } from "@/components/product-filters"
 import { Breadcrumb } from "@/components/breadcrumb"
 import {
   Select,
@@ -10,215 +13,198 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Loader2 } from "lucide-react"
+import { productsApi, getProductImage, type Product } from "@/lib/api"
+import { getDummyProductsByCategory, dummyProducts } from "@/lib/dummy-data"
 
-const categoryData: Record<string, { name: string; description: string }> = {
+const categoryData: Record<string, { name: string; description: string; apiCategory: string }> = {
   "puja-items": {
     name: "Puja Items",
     description: "Sacred essentials for daily worship and rituals",
+    apiCategory: "puja-items",
   },
   "idols": {
     name: "Idols & Murtis",
     description: "Divine forms crafted with devotion for your altar",
+    apiCategory: "idols-murtis",
+  },
+  "idols-murtis": {
+    name: "Idols & Murtis",
+    description: "Divine forms crafted with devotion for your altar",
+    apiCategory: "idols-murtis",
   },
   "gemstones": {
     name: "Gemstones & Malas",
     description: "Spiritual adornments for meditation and healing",
+    apiCategory: "gemstones-malas",
+  },
+  "gemstones-malas": {
+    name: "Gemstones & Malas",
+    description: "Spiritual adornments for meditation and healing",
+    apiCategory: "gemstones-malas",
   },
   "books": {
     name: "Books & Scriptures",
     description: "Sacred wisdom and teachings for spiritual growth",
+    apiCategory: "books-scriptures",
+  },
+  "books-scriptures": {
+    name: "Books & Scriptures",
+    description: "Sacred wisdom and teachings for spiritual growth",
+    apiCategory: "books-scriptures",
   },
 }
 
-const products = [
-  {
-    id: "1",
-    name: "Brass Ganesha Idol - Energised",
-    price: 2999,
-    originalPrice: 3999,
-    image: "/images/product-1.jpg",
-    category: "Idols & Murtis",
-    rating: 4.8,
-    reviewCount: 124,
-    isEnergised: true,
-    inStock: true,
-  },
-  {
-    id: "2",
-    name: "5 Mukhi Rudraksha Mala - 108 Beads",
-    price: 1499,
-    originalPrice: 1999,
-    image: "/images/product-2.jpg",
-    category: "Gemstones & Malas",
-    rating: 4.9,
-    reviewCount: 89,
-    isEnergised: false,
-    inStock: true,
-  },
-  {
-    id: "3",
-    name: "Complete Puja Thali Set - Premium",
-    price: 1299,
-    image: "/images/product-3.jpg",
-    category: "Puja Items",
-    rating: 4.7,
-    reviewCount: 156,
-    isEnergised: false,
-    inStock: true,
-  },
-  {
-    id: "4",
-    name: "Bhagavad Gita - Sanskrit & Hindi",
-    price: 499,
-    originalPrice: 699,
-    image: "/images/product-4.jpg",
-    category: "Books & Scriptures",
-    rating: 4.9,
-    reviewCount: 312,
-    isEnergised: false,
-    inStock: true,
-  },
-  {
-    id: "5",
-    name: "Pure Silver Lakshmi Idol",
-    price: 8999,
-    originalPrice: 10999,
-    image: "/images/product-5.jpg",
-    category: "Idols & Murtis",
-    rating: 5.0,
-    reviewCount: 45,
-    isEnergised: true,
-    inStock: true,
-  },
-  {
-    id: "6",
-    name: "Natural Camphor - 100g Pack",
-    price: 199,
-    image: "/images/product-6.jpg",
-    category: "Puja Items",
-    rating: 4.6,
-    reviewCount: 234,
-    isEnergised: false,
-    inStock: true,
-  },
-  {
-    id: "7",
-    name: "Crystal Sphatik Mala",
-    price: 899,
-    originalPrice: 1299,
-    image: "/images/product-7.jpg",
-    category: "Gemstones & Malas",
-    rating: 4.7,
-    reviewCount: 78,
-    isEnergised: false,
-    inStock: false,
-  },
-  {
-    id: "8",
-    name: "Brass Diya Set - Pack of 5",
-    price: 599,
-    image: "/images/product-8.jpg",
-    category: "Puja Items",
-    rating: 4.5,
-    reviewCount: 189,
-    isEnergised: false,
-    inStock: true,
-  },
-  {
-    id: "9",
-    name: "Brass Shiva Lingam Set",
-    price: 1799,
-    image: "/images/product-1.jpg",
-    category: "Idols & Murtis",
-    rating: 4.8,
-    reviewCount: 67,
-    isEnergised: true,
-    inStock: true,
-  },
-  {
-    id: "10",
-    name: "Sandalwood Agarbatti - Premium",
-    price: 299,
-    image: "/images/product-6.jpg",
-    category: "Puja Items",
-    rating: 4.4,
-    reviewCount: 456,
-    isEnergised: false,
-    inStock: true,
-  },
-  {
-    id: "11",
-    name: "Tiger Eye Mala - 108 Beads",
-    price: 1199,
-    image: "/images/product-7.jpg",
-    category: "Gemstones & Malas",
-    rating: 4.6,
-    reviewCount: 34,
-    isEnergised: false,
-    inStock: true,
-  },
-  {
-    id: "12",
-    name: "Hanuman Chalisa - Illustrated",
-    price: 249,
-    image: "/images/product-4.jpg",
-    category: "Books & Scriptures",
-    rating: 4.8,
-    reviewCount: 178,
-    isEnergised: false,
-    inStock: true,
-  },
-]
+function mapProduct(p: Product) {
+  return {
+    id: p._id,
+    name: p.name,
+    slug: p.slug,
+    price: p.price,
+    originalPrice: p.originalPrice,
+    image: getProductImage(p),
+    category: p.category,
+    rating: p.ratingsAverage || 0,
+    reviewCount: p.ratingsCount || 0,
+    isEnergised: p.isEnergised,
+    inStock: p.stockStatus === "in-stock",
+  }
+}
 
 interface CategoryPageProps {
   params: Promise<{ slug: string }>
 }
 
-export default async function CategoryPage({ params }: CategoryPageProps) {
-  const { slug } = await params
+export default function CategoryPage({ params }: CategoryPageProps) {
+  const { slug } = use(params)
   const category = categoryData[slug] || {
     name: "All Products",
     description: "Browse our complete collection of spiritual products",
+    apiCategory: "",
+  }
+
+  const [products, setProducts] = useState<ReturnType<typeof mapProduct>[]>([])
+  const [loading, setLoading] = useState(true)
+  const [sort, setSort] = useState("featured")
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [total, setTotal] = useState(0)
+  const [filters, setFilters] = useState<FilterState>({
+    categories: [],
+    priceRange: [0, 15000],
+    inStock: false,
+    energised: false,
+    onSale: false,
+  })
+
+  useEffect(() => {
+    setLoading(true)
+
+    const activeCategory = filters.categories.length > 0
+      ? filters.categories[0]
+      : category.apiCategory || undefined
+
+    productsApi.list({
+      category: activeCategory,
+      sort,
+      page,
+      limit: 12,
+      minPrice: filters.priceRange[0] > 0 ? filters.priceRange[0] : undefined,
+      maxPrice: filters.priceRange[1] < 15000 ? filters.priceRange[1] : undefined,
+      inStock: filters.inStock || undefined,
+    })
+      .then((data) => {
+        let mapped = data.products.map(mapProduct)
+
+        if (filters.energised) {
+          mapped = mapped.filter((p) => p.isEnergised)
+        }
+        if (filters.onSale) {
+          mapped = mapped.filter((p) => p.originalPrice && p.originalPrice > p.price)
+        }
+
+        if (mapped.length > 0) {
+          setProducts(mapped)
+          setTotalPages(data.pages)
+          setTotal(filters.energised || filters.onSale ? mapped.length : data.total)
+        } else {
+          let fallback = category.apiCategory
+            ? getDummyProductsByCategory(category.apiCategory).map(mapProduct)
+            : dummyProducts.map(mapProduct)
+
+          if (filters.priceRange[0] > 0 || filters.priceRange[1] < 15000) {
+            fallback = fallback.filter((p) => p.price >= filters.priceRange[0] && p.price <= filters.priceRange[1])
+          }
+          if (filters.inStock) fallback = fallback.filter((p) => p.inStock)
+          if (filters.energised) fallback = fallback.filter((p) => p.isEnergised)
+          if (filters.onSale) fallback = fallback.filter((p) => p.originalPrice && p.originalPrice > p.price)
+
+          setProducts(fallback)
+          setTotal(fallback.length)
+          setTotalPages(1)
+        }
+      })
+      .catch(() => {
+        let fallback = category.apiCategory
+          ? getDummyProductsByCategory(category.apiCategory).map(mapProduct)
+          : dummyProducts.map(mapProduct)
+
+        if (filters.priceRange[0] > 0 || filters.priceRange[1] < 15000) {
+          fallback = fallback.filter((p) => p.price >= filters.priceRange[0] && p.price <= filters.priceRange[1])
+        }
+        if (filters.inStock) fallback = fallback.filter((p) => p.inStock)
+        if (filters.energised) fallback = fallback.filter((p) => p.isEnergised)
+        if (filters.onSale) fallback = fallback.filter((p) => p.originalPrice && p.originalPrice > p.price)
+
+        setProducts(fallback)
+        setTotal(fallback.length)
+        setTotalPages(1)
+      })
+      .finally(() => setLoading(false))
+  }, [category.apiCategory, sort, page, filters])
+
+  const handleFilterChange = (newFilters: FilterState) => {
+    setFilters(newFilters)
+    setPage(1)
   }
 
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1">
-        {/* Header */}
-        <div className="bg-secondary py-8 lg:py-12 border-b border-border">
-          <div className="container mx-auto px-4">
+        <div className="bg-secondary py-4 sm:py-8 lg:py-12 border-b border-border">
+          <div className="container mx-auto px-3 sm:px-4">
             <Breadcrumb
               items={[
                 { label: "Home", href: "/" },
                 { label: category.name },
               ]}
             />
-            <h1 className="text-3xl md:text-4xl font-serif font-bold text-foreground mt-4 mb-2">
+            <h1 className="text-base sm:text-2xl md:text-3xl font-serif font-bold text-foreground mt-2 sm:mt-4 mb-1 sm:mb-2">
               {category.name}
             </h1>
-            <p className="text-muted-foreground">{category.description}</p>
+            <p className="text-xs sm:text-base text-muted-foreground">{category.description}</p>
           </div>
         </div>
 
-        {/* Products Grid */}
-        <div className="container mx-auto px-4 py-8 lg:py-12">
+        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 lg:py-12">
           <div className="flex flex-col lg:flex-row gap-8">
-            {/* Filters Sidebar */}
             <aside className="w-full lg:w-64 shrink-0">
-              <ProductFilters />
+              <ProductFilters
+                filters={filters}
+                onChange={handleFilterChange}
+                currentCategory={category.apiCategory}
+              />
             </aside>
 
-            {/* Products */}
             <div className="flex-1">
-              {/* Sort Bar */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <p className="text-sm text-muted-foreground">
-                  Showing <span className="font-medium text-foreground">{products.length}</span> products
+                  Showing <span className="font-medium text-foreground">{total}</span> products
                 </p>
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-muted-foreground">Sort by:</span>
-                  <Select defaultValue="featured">
+                  <Select value={sort} onValueChange={(v) => { setSort(v); setPage(1) }}>
                     <SelectTrigger className="w-[180px]">
                       <SelectValue placeholder="Sort by" />
                     </SelectTrigger>
@@ -233,31 +219,51 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                 </div>
               </div>
 
-              {/* Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                {products.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
+              {loading ? (
+                <div className="flex justify-center py-20">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : products.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 gap-2 sm:gap-6">
+                  {products.map((product) => (
+                    <ProductCard key={product.id} product={product} />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-center text-muted-foreground py-20">No products found in this category.</p>
+              )}
 
-              {/* Pagination */}
-              <div className="flex items-center justify-center gap-2 mt-12">
-                <button className="px-4 py-2 text-sm border border-border rounded-md hover:bg-secondary transition-colors">
-                  Previous
-                </button>
-                <button className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-md">
-                  1
-                </button>
-                <button className="px-4 py-2 text-sm border border-border rounded-md hover:bg-secondary transition-colors">
-                  2
-                </button>
-                <button className="px-4 py-2 text-sm border border-border rounded-md hover:bg-secondary transition-colors">
-                  3
-                </button>
-                <button className="px-4 py-2 text-sm border border-border rounded-md hover:bg-secondary transition-colors">
-                  Next
-                </button>
-              </div>
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 mt-12">
+                  <button
+                    onClick={() => setPage(Math.max(1, page - 1))}
+                    disabled={page === 1}
+                    className="px-4 py-2 text-sm border border-border rounded-md hover:bg-secondary transition-colors disabled:opacity-50"
+                  >
+                    Previous
+                  </button>
+                  {[...Array(totalPages)].map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setPage(i + 1)}
+                      className={`px-4 py-2 text-sm rounded-md ${
+                        page === i + 1
+                          ? "bg-primary text-primary-foreground"
+                          : "border border-border hover:bg-secondary transition-colors"
+                      }`}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setPage(Math.min(totalPages, page + 1))}
+                    disabled={page === totalPages}
+                    className="px-4 py-2 text-sm border border-border rounded-md hover:bg-secondary transition-colors disabled:opacity-50"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>

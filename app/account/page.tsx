@@ -1,6 +1,8 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Breadcrumb } from "@/components/breadcrumb"
@@ -17,278 +19,161 @@ import {
   LogOut,
   ChevronRight,
   Eye,
+  RotateCcw,
+  Truck,
+  Loader2,
 } from "lucide-react"
-
-const orders = [
-  {
-    id: "SA-ORD-10234",
-    date: "March 5, 2026",
-    status: "Delivered",
-    total: 5497,
-    items: 3,
-  },
-  {
-    id: "SA-ORD-10198",
-    date: "February 18, 2026",
-    status: "Shipped",
-    total: 2999,
-    items: 1,
-  },
-  {
-    id: "SA-ORD-10156",
-    date: "January 28, 2026",
-    status: "Delivered",
-    total: 1798,
-    items: 2,
-  },
-]
-
-const addresses = [
-  {
-    id: 1,
-    name: "Rahul Sharma",
-    address: "B-204, Sunrise Apartments, MG Road, Andheri West",
-    city: "Mumbai",
-    state: "Maharashtra",
-    pincode: "400058",
-    phone: "+91 98765 43210",
-    isDefault: true,
-  },
-  {
-    id: 2,
-    name: "Rahul Sharma",
-    address: "Office: Floor 12, Tech Park, Whitefield",
-    city: "Bangalore",
-    state: "Karnataka",
-    pincode: "560066",
-    phone: "+91 98765 43210",
-    isDefault: false,
-  },
-]
+import { useAuth } from "@/lib/auth-context"
+import { authApi } from "@/lib/api"
+import { toast } from "sonner"
 
 export default function AccountPage() {
+  const router = useRouter()
+  const { user, isLoggedIn, loading, logout, refreshUser } = useAuth()
+  const [saving, setSaving] = useState(false)
+  const [name, setName] = useState("")
+  const [email, setEmail] = useState("")
+  const [phone, setPhone] = useState("")
+
+  // Pre-fill form when user loads
+  useState(() => {
+    if (user) {
+      setName(user.name || "")
+      setEmail(user.email || "")
+      setPhone(user.phone || "")
+    }
+  })
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSaving(true)
+    try {
+      await authApi.updateProfile({ name, email, phone })
+      await refreshUser()
+      toast.success("Profile updated")
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to update")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleLogout = async () => {
+    await logout()
+    router.push("/")
+  }
+
+  const handleDeleteAddress = async (id: string) => {
+    try {
+      await authApi.deleteAddress(id)
+      await refreshUser()
+      toast.success("Address removed")
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete")
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></main>
+        <Footer />
+      </div>
+    )
+  }
+
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 flex items-center justify-center py-16">
+          <div className="text-center">
+            <User className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+            <h1 className="text-2xl font-serif font-bold mb-2">Login Required</h1>
+            <p className="text-muted-foreground mb-6">Please login to access your account.</p>
+            <Button asChild><Link href="/login">Login / Sign Up</Link></Button>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1 bg-secondary">
         <div className="container mx-auto px-4 py-6 lg:py-8">
-          <Breadcrumb
-            items={[
-              { label: "Home", href: "/" },
-              { label: "My Account" },
-            ]}
-          />
-
-          <h1 className="text-2xl md:text-3xl font-serif font-bold text-foreground mt-4 mb-8">
-            My Account
-          </h1>
+          <Breadcrumb items={[{ label: "Home", href: "/" }, { label: "My Account" }]} />
+          <h1 className="text-lg sm:text-2xl md:text-3xl font-serif font-bold text-foreground mt-3 sm:mt-4 mb-4 sm:mb-8">My Account</h1>
 
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            {/* Sidebar */}
             <aside className="lg:col-span-1">
               <div className="bg-card rounded-lg border border-border p-6">
                 <div className="text-center mb-6">
                   <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
                     <User className="h-10 w-10 text-primary" />
                   </div>
-                  <h2 className="font-semibold text-foreground">Rahul Sharma</h2>
-                  <p className="text-sm text-muted-foreground">rahul@email.com</p>
+                  <h2 className="font-semibold text-foreground">{user?.name || "User"}</h2>
+                  <p className="text-sm text-muted-foreground">{user?.phone}</p>
                 </div>
-
                 <nav className="space-y-1">
-                  <Link
-                    href="/account"
-                    className="flex items-center gap-3 px-3 py-2 rounded-md bg-primary/10 text-primary"
-                  >
-                    <User className="h-4 w-4" />
-                    <span className="text-sm font-medium">Profile</span>
-                  </Link>
-                  <Link
-                    href="/account/orders"
-                    className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <Package className="h-4 w-4" />
-                    <span className="text-sm font-medium">My Orders</span>
-                  </Link>
-                  <Link
-                    href="/account/addresses"
-                    className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <MapPin className="h-4 w-4" />
-                    <span className="text-sm font-medium">Addresses</span>
-                  </Link>
-                  <Link
-                    href="/account/wishlist"
-                    className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <Heart className="h-4 w-4" />
-                    <span className="text-sm font-medium">Wishlist</span>
-                  </Link>
-                  <button className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted text-muted-foreground hover:text-destructive transition-colors">
-                    <LogOut className="h-4 w-4" />
-                    <span className="text-sm font-medium">Logout</span>
-                  </button>
+                  <Link href="/account" className="flex items-center gap-3 px-3 py-2 rounded-md bg-primary/10 text-primary"><User className="h-4 w-4" /><span className="text-sm font-medium">Profile</span></Link>
+                  <Link href="/account/orders" className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"><Package className="h-4 w-4" /><span className="text-sm font-medium">My Orders</span></Link>
+                  <Link href="/account/returns" className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"><RotateCcw className="h-4 w-4" /><span className="text-sm font-medium">Returns</span></Link>
+                  <Link href="/track-order" className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"><Truck className="h-4 w-4" /><span className="text-sm font-medium">Track Order</span></Link>
+                  <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted text-muted-foreground hover:text-destructive transition-colors"><LogOut className="h-4 w-4" /><span className="text-sm font-medium">Logout</span></button>
                 </nav>
               </div>
             </aside>
 
-            {/* Main Content */}
             <div className="lg:col-span-3">
               <Tabs defaultValue="profile" className="w-full">
                 <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent mb-6">
-                  <TabsTrigger
-                    value="profile"
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
-                  >
-                    Profile
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="orders"
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
-                  >
-                    Recent Orders
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="addresses"
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
-                  >
-                    Addresses
-                  </TabsTrigger>
+                  <TabsTrigger value="profile" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">Profile</TabsTrigger>
+                  <TabsTrigger value="addresses" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">Addresses</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="profile">
                   <div className="bg-card rounded-lg border border-border p-6">
-                    <h3 className="text-lg font-semibold text-foreground mb-6">
-                      Personal Information
-                    </h3>
-                    <form className="space-y-4">
+                    <h3 className="text-lg font-semibold text-foreground mb-6">Personal Information</h3>
+                    <form onSubmit={handleSave} className="space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="firstName">First Name</Label>
-                          <Input id="firstName" defaultValue="Rahul" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="lastName">Last Name</Label>
-                          <Input id="lastName" defaultValue="Sharma" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="email">Email Address</Label>
-                          <Input id="email" type="email" defaultValue="rahul@email.com" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="phone">Phone Number</Label>
-                          <Input id="phone" type="tel" defaultValue="+91 98765 43210" />
-                        </div>
+                        <div className="space-y-2"><Label>Name</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
+                        <div className="space-y-2"><Label>Email</Label><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
+                        <div className="space-y-2"><Label>Phone</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} disabled /></div>
                       </div>
-                      <Button type="submit">Save Changes</Button>
+                      <Button type="submit" disabled={saving}>
+                        {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                        Save Changes
+                      </Button>
                     </form>
-
-                    <div className="border-t border-border mt-8 pt-8">
-                      <h3 className="text-lg font-semibold text-foreground mb-4">
-                        Change Password
-                      </h3>
-                      <form className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="currentPassword">Current Password</Label>
-                            <Input id="currentPassword" type="password" />
-                          </div>
-                          <div />
-                          <div className="space-y-2">
-                            <Label htmlFor="newPassword">New Password</Label>
-                            <Input id="newPassword" type="password" />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="confirmNewPassword">Confirm New Password</Label>
-                            <Input id="confirmNewPassword" type="password" />
-                          </div>
-                        </div>
-                        <Button type="submit" variant="outline">Update Password</Button>
-                      </form>
-                    </div>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="orders">
-                  <div className="bg-card rounded-lg border border-border">
-                    <div className="p-6 border-b border-border">
-                      <h3 className="text-lg font-semibold text-foreground">
-                        Recent Orders
-                      </h3>
-                    </div>
-                    <div className="divide-y divide-border">
-                      {orders.map((order) => (
-                        <div key={order.id} className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                          <div>
-                            <div className="flex items-center gap-3 mb-1">
-                              <span className="font-medium text-foreground">{order.id}</span>
-                              <Badge
-                                variant={order.status === "Delivered" ? "default" : "secondary"}
-                              >
-                                {order.status}
-                              </Badge>
-                            </div>
-                            <p className="text-sm text-muted-foreground">
-                              {order.date} • {order.items} item{order.items > 1 ? 's' : ''}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-4">
-                            <span className="font-semibold text-foreground">
-                              ₹{order.total.toLocaleString('en-IN')}
-                            </span>
-                            <Button variant="outline" size="sm" className="gap-2">
-                              <Eye className="h-4 w-4" />
-                              View
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="p-6 border-t border-border">
-                      <Link
-                        href="/account/orders"
-                        className="text-sm text-primary hover:underline flex items-center gap-1"
-                      >
-                        View all orders
-                        <ChevronRight className="h-4 w-4" />
-                      </Link>
-                    </div>
                   </div>
                 </TabsContent>
 
                 <TabsContent value="addresses">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {addresses.map((address) => (
-                      <div
-                        key={address.id}
-                        className="bg-card rounded-lg border border-border p-6"
-                      >
+                    {user?.addresses?.map((address) => (
+                      <div key={address._id} className="bg-card rounded-lg border border-border p-6">
                         <div className="flex items-start justify-between mb-4">
-                          <h4 className="font-medium text-foreground">{address.name}</h4>
-                          {address.isDefault && (
-                            <Badge variant="secondary">Default</Badge>
-                          )}
+                          <h4 className="font-medium text-foreground">{address.name || user.name}</h4>
+                          {address.isDefault && <Badge variant="secondary">Default</Badge>}
                         </div>
-                        <p className="text-sm text-muted-foreground mb-1">
-                          {address.address}
-                        </p>
-                        <p className="text-sm text-muted-foreground mb-1">
-                          {address.city}, {address.state} - {address.pincode}
-                        </p>
-                        <p className="text-sm text-muted-foreground mb-4">
-                          {address.phone}
-                        </p>
+                        <p className="text-sm text-muted-foreground mb-1">{address.line1}</p>
+                        {address.line2 && <p className="text-sm text-muted-foreground mb-1">{address.line2}</p>}
+                        <p className="text-sm text-muted-foreground mb-1">{address.city}, {address.state} - {address.pincode}</p>
+                        {address.phone && <p className="text-sm text-muted-foreground mb-4">{address.phone}</p>}
                         <div className="flex gap-2">
-                          <Button variant="outline" size="sm">Edit</Button>
-                          {!address.isDefault && (
-                            <Button variant="ghost" size="sm">Remove</Button>
+                          {!address.isDefault && address._id && (
+                            <Button variant="ghost" size="sm" onClick={() => handleDeleteAddress(address._id!)}>Remove</Button>
                           )}
                         </div>
                       </div>
                     ))}
-                    <div className="bg-card rounded-lg border border-dashed border-border p-6 flex items-center justify-center">
-                      <Button variant="outline">+ Add New Address</Button>
-                    </div>
+                    {(!user?.addresses || user.addresses.length === 0) && (
+                      <p className="text-muted-foreground col-span-2 text-center py-8">No saved addresses. Addresses are saved when you place an order.</p>
+                    )}
                   </div>
                 </TabsContent>
               </Tabs>

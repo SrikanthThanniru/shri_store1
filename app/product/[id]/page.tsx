@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
+import { useParams } from "next/navigation"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Breadcrumb } from "@/components/breadcrumb"
@@ -28,125 +29,103 @@ import {
   Plus,
   Sparkles,
   Check,
+  Loader2,
 } from "lucide-react"
+import { productsApi, getProductImage, getProductImages, type Product } from "@/lib/api"
+import { dummyProducts } from "@/lib/dummy-data"
+import { useCart } from "@/lib/cart-context"
+import { toast } from "sonner"
 
-const product = {
-  id: "1",
-  name: "Brass Ganesha Idol - Energised",
-  price: 2999,
-  originalPrice: 3999,
-  images: [
-    "/images/product-1.jpg",
-    "/images/product-5.jpg",
-    "/images/product-3.jpg",
-    "/images/product-8.jpg",
-  ],
-  category: "Idols & Murtis",
-  rating: 4.8,
-  reviewCount: 124,
-  isEnergised: true,
-  inStock: true,
-  sku: "SA-IDOL-001",
-  description: `This beautifully crafted Brass Ganesha Idol is made by skilled artisans using traditional techniques passed down through generations. Lord Ganesha, the remover of obstacles and the deity of beginnings, brings prosperity and good fortune to your home.
-
-Each idol is individually energised through sacred Vedic rituals performed by learned priests, infusing divine energy that amplifies the spiritual benefits of worship.`,
-  features: [
-    "Handcrafted by skilled artisans",
-    "Made from pure brass with antique finish",
-    "Energised through Vedic rituals",
-    "Height: 8 inches, Weight: 1.2 kg",
-    "Suitable for home temple and office",
-    "Comes with authenticity certificate",
-  ],
-  specifications: {
-    Material: "Pure Brass",
-    Height: "8 inches (20 cm)",
-    Width: "5 inches (12.5 cm)",
-    Weight: "1.2 kg",
-    Finish: "Antique Gold",
-    Origin: "Moradabad, India",
-  },
+function mapCardProduct(p: Product) {
+  return {
+    id: p._id,
+    name: p.name,
+    slug: p.slug,
+    price: p.price,
+    originalPrice: p.originalPrice,
+    image: getProductImage(p),
+    category: p.category,
+    rating: p.ratingsAverage || 0,
+    reviewCount: p.ratingsCount || 0,
+    isEnergised: p.isEnergised,
+    inStock: p.stockStatus === "in-stock",
+  }
 }
 
-const relatedProducts = [
-  {
-    id: "5",
-    name: "Pure Silver Lakshmi Idol",
-    price: 8999,
-    originalPrice: 10999,
-    image: "/images/product-5.jpg",
-    category: "Idols & Murtis",
-    rating: 5.0,
-    reviewCount: 45,
-    isEnergised: true,
-    inStock: true,
-  },
-  {
-    id: "9",
-    name: "Brass Shiva Lingam Set",
-    price: 1799,
-    image: "/images/product-1.jpg",
-    category: "Idols & Murtis",
-    rating: 4.8,
-    reviewCount: 67,
-    isEnergised: true,
-    inStock: true,
-  },
-  {
-    id: "3",
-    name: "Complete Puja Thali Set",
-    price: 1299,
-    image: "/images/product-3.jpg",
-    category: "Puja Items",
-    rating: 4.7,
-    reviewCount: 156,
-    isEnergised: false,
-    inStock: true,
-  },
-  {
-    id: "8",
-    name: "Brass Diya Set - Pack of 5",
-    price: 599,
-    image: "/images/product-8.jpg",
-    category: "Puja Items",
-    rating: 4.5,
-    reviewCount: 189,
-    isEnergised: false,
-    inStock: true,
-  },
-]
-
-const reviews = [
-  {
-    id: 1,
-    name: "Priya Sharma",
-    rating: 5,
-    date: "February 15, 2026",
-    verified: true,
-    comment: "Absolutely beautiful idol! The craftsmanship is exceptional and you can feel the divine energy. The packaging was also very secure. Highly recommended!",
-  },
-  {
-    id: 2,
-    name: "Rajesh Patel",
-    rating: 5,
-    date: "February 10, 2026",
-    verified: true,
-    comment: "This is my second purchase from Shri Aaum. The quality is consistently excellent. The energisation certificate adds authenticity.",
-  },
-  {
-    id: 3,
-    name: "Anita Gupta",
-    rating: 4,
-    date: "January 28, 2026",
-    verified: true,
-    comment: "Good quality brass idol with nice finish. Delivery was on time. The only reason for 4 stars is that I expected it to be slightly bigger.",
-  },
-]
-
 export default function ProductPage() {
+  const params = useParams()
+  const slugOrId = params.id as string
+  const { addItem } = useCart()
+
+  const [product, setProduct] = useState<Product | null>(null)
+  const [related, setRelated] = useState<ReturnType<typeof mapCardProduct>[]>([])
+  const [loading, setLoading] = useState(true)
   const [selectedImage, setSelectedImage] = useState(0)
   const [quantity, setQuantity] = useState(1)
 
+  useEffect(() => {
+    setLoading(true)
+    productsApi.getBySlugOrId(slugOrId)
+      .then((data) => {
+        setProduct(data.product)
+        return productsApi.list({ category: data.product.category, limit: 4 })
+      })
+      .then((data) => {
+        setRelated(data.products.filter((p) => p._id !== product?._id).slice(0, 4).map(mapCardProduct))
+      })
+      .catch(() => {
+        const dummy = dummyProducts.find((p) => p.slug === slugOrId || p._id === slugOrId)
+        if (dummy) {
+          setProduct(dummy)
+          setRelated(dummyProducts.filter((p) => p.category === dummy.category && p._id !== dummy._id).slice(0, 4).map(mapCardProduct))
+        } else {
+          setProduct(dummyProducts[0])
+          setRelated(dummyProducts.slice(1, 5).map(mapCardProduct))
+        }
+      })
+      .finally(() => setLoading(false))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slugOrId])
+
+  const handleAddToCart = async () => {
+    if (!product) return
+    try {
+      await addItem(product, quantity)
+      toast.success(`${product.name} added to cart`)
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to add to cart")
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </main>
+        <Footer />
+      </div>
+    )
+  }
+
+  if (!product) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-serif font-bold mb-2">Product Not Found</h1>
+            <p className="text-muted-foreground mb-4">The product you are looking for does not exist.</p>
+            <Button asChild><Link href="/">Go Home</Link></Button>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    )
+  }
+
+  const images = getProductImages(product)
   const discount = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0
@@ -155,22 +134,21 @@ export default function ProductPage() {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1">
-        <div className="container mx-auto px-4 py-6 lg:py-8">
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-6 lg:py-8">
           <Breadcrumb
             items={[
               { label: "Home", href: "/" },
-              { label: product.category, href: "/category/idols" },
+              { label: product.category, href: `/category/${product.category}` },
               { label: product.name },
             ]}
           />
 
-          {/* Product Details */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 mt-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 lg:gap-12 mt-3 sm:mt-6">
             {/* Images */}
-            <div className="space-y-4">
+            <div className="space-y-2 sm:space-y-4">
               <div className="aspect-square relative overflow-hidden rounded-lg bg-muted">
                 <Image
-                  src={product.images[selectedImage]}
+                  src={images[selectedImage]}
                   alt={product.name}
                   fill
                   className="object-cover"
@@ -182,154 +160,126 @@ export default function ProductPage() {
                   </Badge>
                 )}
               </div>
-              <div className="grid grid-cols-4 gap-3">
-                {product.images.map((image, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setSelectedImage(index)}
-                    className={`aspect-square relative overflow-hidden rounded-lg border-2 transition-colors ${
-                      selectedImage === index ? "border-primary" : "border-transparent"
-                    }`}
-                  >
-                    <Image
-                      src={image}
-                      alt={`${product.name} ${index + 1}`}
-                      fill
-                      className="object-cover"
-                    />
-                  </button>
-                ))}
-              </div>
+              {images.length > 1 && (
+                <div className="grid grid-cols-4 gap-3">
+                  {images.map((image, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setSelectedImage(index)}
+                      className={`aspect-square relative overflow-hidden rounded-lg border-2 transition-colors ${
+                        selectedImage === index ? "border-primary" : "border-transparent"
+                      }`}
+                    >
+                      <Image src={image} alt={`${product.name} ${index + 1}`} fill className="object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Info */}
             <div>
               <Link
-                href={`/category/${product.category.toLowerCase().replace(/ /g, '-')}`}
-                className="text-sm text-primary hover:underline"
+                href={`/category/${product.category.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-')}`}
+                className="text-[10px] sm:text-sm text-primary hover:underline"
               >
                 {product.category}
               </Link>
-              
-              <h1 className="text-2xl md:text-3xl font-serif font-bold text-foreground mt-2 mb-4">
+
+              <h1 className="text-lg sm:text-2xl md:text-3xl font-serif font-bold text-foreground mt-1 mb-2 sm:mt-2 sm:mb-4 leading-tight">
                 {product.name}
               </h1>
 
-              {/* Rating */}
-              <div className="flex items-center gap-3 mb-6">
-                <div className="flex items-center gap-1">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`h-5 w-5 ${
-                        i < Math.floor(product.rating) ? "text-accent fill-accent" : "text-muted"
-                      }`}
-                    />
-                  ))}
+              {(product.ratingsAverage ?? 0) > 0 && (
+                <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-6">
+                  <div className="flex items-center gap-0.5">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className={`h-3.5 w-3.5 sm:h-5 sm:w-5 ${i < Math.floor(product.ratingsAverage!) ? "text-accent fill-accent" : "text-muted"}`} />
+                    ))}
+                  </div>
+                  <span className="text-[10px] sm:text-sm text-muted-foreground">
+                    {product.ratingsAverage} ({product.ratingsCount || 0} reviews)
+                  </span>
                 </div>
-                <span className="text-sm text-muted-foreground">
-                  {product.rating} ({product.reviewCount} reviews)
-                </span>
-              </div>
+              )}
 
-              {/* Price */}
-              <div className="flex items-center gap-4 mb-6">
-                <span className="text-3xl font-bold text-foreground">
+              <div className="flex items-center gap-2 sm:gap-4 mb-3 sm:mb-6">
+                <span className="text-xl sm:text-3xl font-bold text-foreground">
                   ₹{product.price.toLocaleString('en-IN')}
                 </span>
                 {product.originalPrice && (
                   <>
-                    <span className="text-xl text-muted-foreground line-through">
+                    <span className="text-sm sm:text-xl text-muted-foreground line-through">
                       ₹{product.originalPrice.toLocaleString('en-IN')}
                     </span>
-                    <Badge variant="destructive">{discount}% OFF</Badge>
+                    <Badge variant="destructive" className="text-[10px] sm:text-xs">{discount}% OFF</Badge>
                   </>
                 )}
               </div>
 
-              {/* Stock Status */}
-              <div className="flex items-center gap-2 mb-6">
-                {product.inStock ? (
+              <div className="flex items-center gap-2 mb-3 sm:mb-6">
+                {product.stockStatus === "in-stock" ? (
                   <>
-                    <div className="h-2 w-2 rounded-full bg-green-500" />
-                    <span className="text-sm text-green-600 font-medium">In Stock</span>
+                    <div className="h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-green-500" />
+                    <span className="text-xs sm:text-sm text-green-600 font-medium">In Stock</span>
                   </>
                 ) : (
                   <>
-                    <div className="h-2 w-2 rounded-full bg-red-500" />
-                    <span className="text-sm text-red-600 font-medium">Out of Stock</span>
+                    <div className="h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-red-500" />
+                    <span className="text-xs sm:text-sm text-red-600 font-medium">Out of Stock</span>
                   </>
                 )}
-                <span className="text-sm text-muted-foreground ml-2">SKU: {product.sku}</span>
+                <span className="text-[10px] sm:text-sm text-muted-foreground ml-1 sm:ml-2">SKU: {product.sku}</span>
               </div>
 
-              {/* Description */}
-              <p className="text-muted-foreground leading-relaxed mb-6">
-                {product.description.split('\n')[0]}
+              <p className="text-xs sm:text-base text-muted-foreground leading-relaxed mb-3 sm:mb-6 line-clamp-3 sm:line-clamp-none">
+                {product.description?.split('\n')[0]}
               </p>
 
-              {/* Features */}
-              <ul className="space-y-2 mb-8">
-                {product.features.slice(0, 4).map((feature, index) => (
-                  <li key={index} className="flex items-center gap-2 text-sm">
-                    <Check className="h-4 w-4 text-primary shrink-0" />
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
+              {product.features && product.features.length > 0 && (
+                <ul className="space-y-1.5 sm:space-y-2 mb-4 sm:mb-8">
+                  {product.features.slice(0, 4).map((feature, index) => (
+                    <li key={index} className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+                      <Check className="h-3 w-3 sm:h-4 sm:w-4 text-primary shrink-0" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
 
-              {/* Quantity & Add to Cart */}
-              <div className="flex flex-col sm:flex-row gap-4 mb-6">
+              <div className="flex items-center gap-2 sm:gap-4 mb-4 sm:mb-6">
                 <div className="flex items-center border border-border rounded-md">
-                  <button
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="p-3 hover:bg-secondary transition-colors"
-                    aria-label="Decrease quantity"
-                  >
-                    <Minus className="h-4 w-4" />
+                  <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="p-2 sm:p-3 hover:bg-secondary transition-colors" aria-label="Decrease quantity">
+                    <Minus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   </button>
-                  <span className="w-12 text-center font-medium">{quantity}</span>
-                  <button
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="p-3 hover:bg-secondary transition-colors"
-                    aria-label="Increase quantity"
-                  >
-                    <Plus className="h-4 w-4" />
+                  <span className="w-8 sm:w-12 text-center font-medium text-sm">{quantity}</span>
+                  <button onClick={() => setQuantity(quantity + 1)} className="p-2 sm:p-3 hover:bg-secondary transition-colors" aria-label="Increase quantity">
+                    <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   </button>
                 </div>
-                <Button size="lg" className="flex-1 gap-2">
-                  <ShoppingCart className="h-5 w-5" />
+                <Button className="flex-1 gap-1.5 sm:gap-2 h-9 sm:h-11 text-xs sm:text-base" onClick={handleAddToCart} disabled={product.stockStatus !== "in-stock"}>
+                  <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
                   Add to Cart
                 </Button>
-                <Button size="lg" variant="outline">
-                  <Heart className="h-5 w-5" />
-                </Button>
-                <Button size="lg" variant="outline">
-                  <Share2 className="h-5 w-5" />
-                </Button>
+                <Button variant="outline" size="icon" className="h-9 w-9 sm:h-11 sm:w-11"><Heart className="h-4 w-4 sm:h-5 sm:w-5" /></Button>
+                <Button variant="outline" size="icon" className="h-9 w-9 sm:h-11 sm:w-11"><Share2 className="h-4 w-4 sm:h-5 sm:w-5" /></Button>
               </div>
 
-              {/* Buy Now */}
-              <Button size="lg" variant="secondary" className="w-full mb-8">
-                Buy Now
-              </Button>
-
-              {/* Trust Badges */}
-              <div className="grid grid-cols-3 gap-4 p-4 bg-secondary rounded-lg">
+              <div className="grid grid-cols-3 gap-2 sm:gap-4 p-2.5 sm:p-4 bg-secondary rounded-lg">
                 <div className="flex flex-col items-center text-center">
-                  <Truck className="h-6 w-6 text-primary mb-2" />
-                  <span className="text-xs font-medium">Free Delivery</span>
-                  <span className="text-[10px] text-muted-foreground">Above ₹999</span>
+                  <Truck className="h-4 w-4 sm:h-6 sm:w-6 text-primary mb-1 sm:mb-2" />
+                  <span className="text-[10px] sm:text-xs font-medium">Free Delivery</span>
+                  <span className="text-[8px] sm:text-[10px] text-muted-foreground">Above ₹999</span>
                 </div>
                 <div className="flex flex-col items-center text-center">
-                  <Shield className="h-6 w-6 text-primary mb-2" />
-                  <span className="text-xs font-medium">Secure Payment</span>
-                  <span className="text-[10px] text-muted-foreground">100% Protected</span>
+                  <Shield className="h-4 w-4 sm:h-6 sm:w-6 text-primary mb-1 sm:mb-2" />
+                  <span className="text-[10px] sm:text-xs font-medium">Secure Payment</span>
+                  <span className="text-[8px] sm:text-[10px] text-muted-foreground">100% Protected</span>
                 </div>
                 <div className="flex flex-col items-center text-center">
-                  <RotateCcw className="h-6 w-6 text-primary mb-2" />
-                  <span className="text-xs font-medium">Easy Returns</span>
-                  <span className="text-[10px] text-muted-foreground">14 Day Policy</span>
+                  <RotateCcw className="h-4 w-4 sm:h-6 sm:w-6 text-primary mb-1 sm:mb-2" />
+                  <span className="text-[10px] sm:text-xs font-medium">Easy Returns</span>
+                  <span className="text-[8px] sm:text-[10px] text-muted-foreground">14 Day Policy</span>
                 </div>
               </div>
             </div>
@@ -338,94 +288,50 @@ export default function ProductPage() {
           {/* Tabs */}
           <Tabs defaultValue="description" className="mt-12">
             <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent">
-              <TabsTrigger
-                value="description"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
-              >
+              <TabsTrigger value="description" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
                 Description
               </TabsTrigger>
-              <TabsTrigger
-                value="specifications"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
-              >
-                Specifications
-              </TabsTrigger>
-              <TabsTrigger
-                value="reviews"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
-              >
-                Reviews ({product.reviewCount})
-              </TabsTrigger>
-              <TabsTrigger
-                value="shipping"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
-              >
+              {product.specifications && Object.keys(product.specifications).length > 0 && (
+                <TabsTrigger value="specifications" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
+                  Specifications
+                </TabsTrigger>
+              )}
+              <TabsTrigger value="shipping" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
                 Shipping & Returns
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="description" className="py-6">
               <div className="prose prose-neutral max-w-none">
-                <p className="text-muted-foreground leading-relaxed whitespace-pre-line">
-                  {product.description}
-                </p>
-                <h3 className="text-lg font-semibold mt-6 mb-4">Key Features</h3>
-                <ul className="space-y-2">
-                  {product.features.map((feature, index) => (
-                    <li key={index} className="flex items-center gap-2">
-                      <Check className="h-4 w-4 text-primary shrink-0" />
-                      <span className="text-muted-foreground">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
+                <p className="text-muted-foreground leading-relaxed whitespace-pre-line">{product.description}</p>
+                {product.features && product.features.length > 0 && (
+                  <>
+                    <h3 className="text-lg font-semibold mt-6 mb-4">Key Features</h3>
+                    <ul className="space-y-2">
+                      {product.features.map((feature, index) => (
+                        <li key={index} className="flex items-center gap-2">
+                          <Check className="h-4 w-4 text-primary shrink-0" />
+                          <span className="text-muted-foreground">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
               </div>
             </TabsContent>
 
-            <TabsContent value="specifications" className="py-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {Object.entries(product.specifications).map(([key, value]) => (
-                  <div key={key} className="flex justify-between py-3 border-b border-border">
-                    <span className="font-medium text-foreground">{key}</span>
-                    <span className="text-muted-foreground">{value}</span>
-                  </div>
-                ))}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="reviews" className="py-6">
-              <div className="space-y-6">
-                {reviews.map((review) => (
-                  <div key={review.id} className="border-b border-border pb-6">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-foreground">{review.name}</span>
-                          {review.verified && (
-                            <Badge variant="secondary" className="text-xs">
-                              Verified Purchase
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 mt-1">
-                          <div className="flex items-center">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`h-4 w-4 ${
-                                  i < review.rating ? "text-accent fill-accent" : "text-muted"
-                                }`}
-                              />
-                            ))}
-                          </div>
-                          <span className="text-sm text-muted-foreground">{review.date}</span>
-                        </div>
-                      </div>
+            {product.specifications && (
+              <TabsContent value="specifications" className="py-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {Object.entries(product.specifications).map(([key, value]) => (
+                    <div key={key} className="flex justify-between py-3 border-b border-border">
+                      <span className="font-medium text-foreground">{key}</span>
+                      <span className="text-muted-foreground">{value}</span>
                     </div>
-                    <p className="text-muted-foreground">{review.comment}</p>
-                  </div>
-                ))}
-              </div>
-            </TabsContent>
+                  ))}
+                </div>
+              </TabsContent>
+            )}
 
             <TabsContent value="shipping" className="py-6">
               <Accordion type="single" collapsible className="w-full">
@@ -435,9 +341,8 @@ export default function ProductPage() {
                     <ul className="space-y-2 text-muted-foreground">
                       <li>Free shipping on orders above ₹999</li>
                       <li>Standard delivery: 5-7 business days</li>
-                      <li>Express delivery: 2-3 business days (additional charges apply)</li>
+                      <li>Tracking via Shiprocket — updates sent via WhatsApp & SMS</li>
                       <li>We ship to all pincodes across India</li>
-                      <li>Tracking information will be sent via WhatsApp and SMS</li>
                     </ul>
                   </AccordionContent>
                 </AccordionItem>
@@ -448,8 +353,8 @@ export default function ProductPage() {
                       <li>14-day hassle-free returns for non-energised products</li>
                       <li>Energised products are non-returnable (all sales final)</li>
                       <li>Products must be unused and in original packaging</li>
-                      <li>Refund will be initiated within 5-7 business days after item reaches us</li>
-                      <li>COD orders: refund via bank transfer</li>
+                      <li>Refund within 5–7 business days after item reaches us</li>
+                      <li>COD orders: refund via bank transfer (NEFT)</li>
                     </ul>
                   </AccordionContent>
                 </AccordionItem>
@@ -458,16 +363,16 @@ export default function ProductPage() {
           </Tabs>
 
           {/* Related Products */}
-          <section className="mt-16">
-            <h2 className="text-2xl font-serif font-bold text-foreground mb-8">
-              You May Also Like
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {relatedProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-          </section>
+          {related.length > 0 && (
+            <section className="mt-8 sm:mt-16">
+              <h2 className="text-lg sm:text-2xl font-serif font-bold text-foreground mb-4 sm:mb-8">You May Also Like</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-6">
+                {related.map((p) => (
+                  <ProductCard key={p.id} product={p} />
+                ))}
+              </div>
+            </section>
+          )}
         </div>
       </main>
       <Footer />

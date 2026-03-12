@@ -1,0 +1,23 @@
+{
+  "name": "Shri Aaum - Divine Blessings",
+  "short_name": "Shri Aaum",
+  "description": "Authentic spiritual products - puja items, idols, gemstones, malas, and sacred scriptures",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fefaf3",
+  "theme_color": "#a00404",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
