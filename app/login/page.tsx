@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, Suspense } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -14,7 +14,7 @@ import { authApi } from "@/lib/api"
 import { useAuth } from "@/lib/auth-context"
 import { toast } from "sonner"
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { login, setUser } = useAuth()
@@ -81,9 +81,6 @@ export default function LoginPage() {
     try {
       const res = await authApi.completeProfile({
         name,
-        dob: null,
-        zodiacSign: null,
-        email: null,
       })
       if (res.user) {
         setUser(res.user)
@@ -234,5 +231,13 @@ export default function LoginPage() {
       </main>
       <Footer />
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+      <LoginContent />
+    </Suspense>
   )
 }
