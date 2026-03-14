@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { Heart, ShoppingCart, Star, Sparkles } from "lucide-react"
+import { ShoppingCart, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
@@ -59,7 +59,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
 
   return (
     <div className={cn("group relative bg-card rounded-lg overflow-hidden border border-border", className)}>
-      <Link href={productHref} className="block relative aspect-square sm:aspect-square overflow-hidden">
+      <Link href={productHref} className="block relative aspect-[5/4] sm:aspect-square overflow-hidden">
         <Image
           src={product.image}
           alt={product.name}
@@ -84,41 +84,16 @@ export function ProductCard({ product, className }: ProductCardProps) {
             </Badge>
           )}
         </div>
-        <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button size="icon" variant="secondary" className="h-9 w-9 rounded-full">
-            <Heart className="h-4 w-4" />
-            <span className="sr-only">Add to wishlist</span>
-          </Button>
-        </div>
       </Link>
 
-      <div className="p-2 sm:p-4">
+      <div className="p-3 sm:p-4">
         <Link href={productHref}>
           <h3 className="text-[11px] sm:text-sm font-medium text-foreground leading-snug line-clamp-1 sm:line-clamp-2 hover:text-primary transition-colors">
             {product.name}
           </h3>
         </Link>
 
-        <div className="hidden sm:flex items-center gap-1 mt-1 mb-2">
-          <div className="flex items-center">
-            {[...Array(5)].map((_, i) => (
-              <Star
-                key={i}
-                className={cn(
-                  "h-3 w-3",
-                  i < Math.floor(product.rating)
-                    ? "text-accent fill-accent"
-                    : "text-muted"
-                )}
-              />
-            ))}
-          </div>
-          <span className="text-[10px] text-muted-foreground">
-            ({product.reviewCount})
-          </span>
-        </div>
-
-        <div className="flex items-baseline gap-1 sm:gap-2 mt-1 sm:mt-0 mb-1.5 sm:mb-3">
+        <div className="flex items-baseline gap-1.5 sm:gap-2 mt-1 mb-2 sm:mb-3">
           <span className="text-[13px] sm:text-lg font-bold text-foreground">
             ₹{product.price.toLocaleString('en-IN')}
           </span>
@@ -130,7 +105,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
         </div>
 
         <Button
-          className="w-full gap-1 sm:gap-2 text-[10px] sm:text-sm h-7 sm:h-10 rounded-md"
+          className="w-full gap-1.5 sm:gap-2 text-[11px] sm:text-sm h-8 sm:h-10 rounded-md"
           disabled={!product.inStock}
           onClick={handleAddToCart}
         >

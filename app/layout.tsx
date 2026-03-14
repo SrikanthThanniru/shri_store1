@@ -48,7 +48,7 @@ export default function RootLayout({
               {children}
             </div>
             <MobileBottomNav />
-            <Toaster position="top-center" richColors />
+            <Toaster position="top-center" richColors duration={3000} closeButton />
           </CartProvider>
         </AuthProvider>
         <Analytics />

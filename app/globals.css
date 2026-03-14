@@ -152,6 +152,23 @@ html {
   -webkit-overflow-scrolling: touch;
 }
 
+/* Trust badges continuous scroll */
+@keyframes scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-33.333%); }
+}
+.animate-scroll {
+  animation: scroll 10s linear infinite;
+}
+@media (min-width: 1024px) {
+  .animate-scroll {
+    animation-duration: 18s;
+  }
+}
+.animate-scroll:hover {
+  animation-play-state: paused;
+}
+
 /* Hide scrollbar on mobile for horizontal scrolls */
 .no-scrollbar {
   -ms-overflow-style: none;

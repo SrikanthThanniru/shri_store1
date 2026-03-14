@@ -24,46 +24,60 @@ function mapProduct(p: Product) {
   }
 }
 
+function pickFeatured(all: ReturnType<typeof mapProduct>[]) {
+  const energised = all.filter((p) => p.isEnergised).slice(0, 2)
+  const normal = all.filter((p) => !p.isEnergised).slice(0, 2)
+  const picked = [...energised, ...normal]
+  if (picked.length < 4) {
+    const ids = new Set(picked.map((p) => p.id))
+    for (const p of all) {
+      if (picked.length >= 4) break
+      if (!ids.has(p.id)) picked.push(p)
+    }
+  }
+  return picked.slice(0, 4)
+}
+
 export function FeaturedProducts() {
   const [products, setProducts] = useState<ReturnType<typeof mapProduct>[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    productsApi.list({ limit: 8, sort: "featured" })
+    productsApi.list({ limit: 20, sort: "featured" })
       .then((data) => {
         const mapped = data.products.map(mapProduct)
-        setProducts(mapped.length > 0 ? mapped : dummyProducts.map(mapProduct))
+        setProducts(pickFeatured(mapped.length > 0 ? mapped : dummyProducts.map(mapProduct)))
       })
-      .catch(() => setProducts(dummyProducts.map(mapProduct)))
+      .catch(() => setProducts(pickFeatured(dummyProducts.map(mapProduct))))
       .finally(() => setLoading(false))
   }, [])
 
   return (
-    <section className="py-6 sm:py-16 lg:py-24 bg-secondary">
-      <div className="container mx-auto px-4">
-        <div className="flex items-end justify-between mb-4 sm:mb-12">
-          <div>
-            <h2 className="text-lg sm:text-3xl md:text-4xl font-serif font-bold text-foreground mb-0.5 sm:mb-4">
+    <section className="py-6 sm:py-10 md:py-12 lg:py-16 bg-secondary">
+      <div className="container mx-auto px-4 sm:px-5">
+        <div className="flex items-end justify-between gap-3 mb-4 sm:mb-8 lg:mb-12">
+          <div className="min-w-0">
+            <h2 className="text-lg sm:text-2xl md:text-4xl font-serif font-bold text-foreground mb-1 sm:mb-2">
               Featured Products
             </h2>
-            <p className="text-xs sm:text-base text-muted-foreground max-w-2xl hidden sm:block">
+            <p className="text-xs sm:text-sm text-muted-foreground max-w-2xl hidden sm:block">
               Handpicked spiritual essentials, blessed with authenticity and crafted with devotion
             </p>
           </div>
-          <Button asChild variant="outline" size="sm" className="text-[10px] sm:text-sm h-7 sm:h-10 px-2 sm:px-4 shrink-0">
+          <Button asChild variant="outline" size="sm" className="text-xs sm:text-sm h-8 sm:h-10 px-3 sm:px-4 shrink-0">
             <Link href="/categories" className="gap-1 sm:gap-2">
               View All
-              <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4" />
+              <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </Link>
           </Button>
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-6">
-            {[...Array(8)].map((_, i) => (
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+            {[...Array(4)].map((_, i) => (
               <div key={i} className="bg-card rounded-lg border border-border overflow-hidden animate-pulse">
-                <div className="aspect-[4/5] sm:aspect-square bg-muted" />
-                <div className="p-2 sm:p-4 space-y-2 sm:space-y-3">
+                <div className="aspect-[5/4] sm:aspect-square bg-muted" />
+                <div className="p-3 sm:p-4 space-y-2 sm:space-y-3">
                   <div className="h-3 bg-muted rounded w-3/4" />
                   <div className="h-3 bg-muted rounded w-1/2" />
                   <div className="h-7 sm:h-10 bg-muted rounded" />

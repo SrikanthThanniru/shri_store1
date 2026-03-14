@@ -65,23 +65,23 @@ export function CategoriesSection() {
   }, [])
 
   return (
-    <section className="py-6 sm:py-16 lg:py-24 bg-background">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-5 sm:mb-12">
-            <h2 className="text-lg sm:text-3xl md:text-4xl font-serif font-bold text-foreground mb-1 sm:mb-4">
+    <section className="py-6 sm:py-10 md:py-12 lg:py-24 bg-background">
+      <div className="container mx-auto px-4 sm:px-5">
+        <div className="text-center mb-4 sm:mb-8 lg:mb-12">
+          <h2 className="text-lg sm:text-2xl md:text-4xl font-serif font-bold text-foreground mb-2 sm:mb-4">
             Shop by Category
           </h2>
-          <p className="text-xs sm:text-base text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-xs sm:text-sm text-muted-foreground max-w-2xl mx-auto px-1">
             Explore our curated collection of authentic spiritual products
           </p>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
           {categories.map((category, index) => (
             <Link
               key={category.slug || category.name || index}
               href={category.href}
-              className="group relative overflow-hidden rounded-lg aspect-[3/4] sm:aspect-[4/5] bg-muted"
+              className="group relative overflow-hidden rounded-lg aspect-[4/3] sm:aspect-[4/5] bg-muted"
             >
               <Image
                 src={category.image || "/placeholder.svg"}
@@ -90,7 +90,7 @@ export function CategoriesSection() {
                 className="object-cover transition-transform duration-500 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 p-2 sm:p-6">
+              <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-6">
                 <h3 className="text-xs sm:text-xl font-serif font-semibold text-background leading-tight">
                   {category.name}
                 </h3>

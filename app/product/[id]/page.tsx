@@ -18,7 +18,6 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import {
-  Heart,
   ShoppingCart,
   Share2,
   Truck,
@@ -261,7 +260,6 @@ export default function ProductPage() {
                   <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
                   Add to Cart
                 </Button>
-                <Button variant="outline" size="icon" className="h-9 w-9 sm:h-11 sm:w-11"><Heart className="h-4 w-4 sm:h-5 sm:w-5" /></Button>
                 <Button variant="outline" size="icon" className="h-9 w-9 sm:h-11 sm:w-11"><Share2 className="h-4 w-4 sm:h-5 sm:w-5" /></Button>
               </div>
 

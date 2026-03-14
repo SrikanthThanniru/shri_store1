@@ -42,13 +42,13 @@ export function Testimonials() {
   const prev = () => setCurrent((prev) => (prev - 1 + testimonials.length) % testimonials.length)
 
   return (
-    <section className="py-16 lg:py-24 bg-background">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-serif font-bold text-foreground mb-4">
+    <section className="py-5 sm:py-12 md:py-16 lg:py-24 bg-background">
+      <div className="container mx-auto px-4 sm:px-5">
+        <div className="text-center mb-4 sm:mb-10 lg:mb-12">
+          <h2 className="text-base sm:text-2xl md:text-4xl font-serif font-bold text-foreground mb-1 sm:mb-4">
             What Our Devotees Say
           </h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-xs sm:text-base text-muted-foreground max-w-2xl mx-auto">
             Trusted by thousands of devotees across India for authentic spiritual products
           </p>
         </div>
@@ -60,27 +60,27 @@ export function Testimonials() {
               style={{ transform: `translateX(-${current * 100}%)` }}
             >
               {testimonials.map((testimonial) => (
-                <div key={testimonial.id} className="w-full flex-shrink-0 px-4">
-                  <div className="bg-card border border-border rounded-xl p-8 md:p-12">
-                    <Quote className="h-12 w-12 text-primary/20 mb-6" />
+                <div key={testimonial.id} className="w-full flex-shrink-0 px-1 sm:px-4">
+                  <div className="bg-card border border-border rounded-xl p-4 sm:p-8 md:p-12">
+                    <Quote className="h-7 w-7 sm:h-12 sm:w-12 text-primary/20 mb-2 sm:mb-6" />
                     
-                    <div className="flex items-center gap-1 mb-4">
+                    <div className="flex items-center gap-0.5 sm:gap-1 mb-2 sm:mb-4">
                       {[...Array(5)].map((_, i) => (
                         <Star
                           key={i}
-                          className={`h-5 w-5 ${
+                          className={`h-3.5 w-3.5 sm:h-5 sm:w-5 ${
                             i < testimonial.rating ? "text-accent fill-accent" : "text-muted"
                           }`}
                         />
                       ))}
                     </div>
 
-                    <p className="text-lg md:text-xl text-foreground leading-relaxed mb-8">
+                    <p className="text-sm sm:text-base md:text-xl text-foreground leading-snug sm:leading-relaxed mb-4 sm:mb-8">
                       {`"${testimonial.text}"`}
                     </p>
 
-                    <div className="flex items-center gap-4">
-                      <div className="relative w-14 h-14 rounded-full overflow-hidden bg-muted">
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <div className="relative w-10 h-10 sm:w-14 sm:h-14 rounded-full overflow-hidden bg-muted shrink-0">
                         <Image
                           src={testimonial.image}
                           alt={testimonial.name}
@@ -88,10 +88,10 @@ export function Testimonials() {
                           className="object-cover"
                         />
                       </div>
-                      <div>
-                        <p className="font-semibold text-foreground">{testimonial.name}</p>
-                        <p className="text-sm text-muted-foreground">{testimonial.location}</p>
-                        <p className="text-xs text-primary mt-1">Purchased: {testimonial.product}</p>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-foreground text-sm sm:text-base">{testimonial.name}</p>
+                        <p className="text-[11px] sm:text-sm text-muted-foreground">{testimonial.location}</p>
+                        <p className="text-[10px] sm:text-xs text-primary mt-0.5 sm:mt-1">Purchased: {testimonial.product}</p>
                       </div>
                     </div>
                   </div>
@@ -101,14 +101,14 @@ export function Testimonials() {
           </div>
 
           {/* Navigation */}
-          <div className="flex items-center justify-center gap-4 mt-8">
+          <div className="flex items-center justify-center gap-2 sm:gap-4 mt-4 sm:mt-8">
             <Button
               variant="outline"
               size="icon"
               onClick={prev}
-              className="rounded-full"
+              className="rounded-full h-8 w-8 sm:h-10 sm:w-10"
             >
-              <ChevronLeft className="h-5 w-5" />
+              <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
               <span className="sr-only">Previous testimonial</span>
             </Button>
             
@@ -117,7 +117,7 @@ export function Testimonials() {
                 <button
                   key={index}
                   onClick={() => setCurrent(index)}
-                  className={`w-2.5 h-2.5 rounded-full transition-colors ${
+                  className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full transition-colors ${
                     index === current ? "bg-primary" : "bg-primary/30"
                   }`}
                   aria-label={`Go to testimonial ${index + 1}`}
@@ -129,9 +129,9 @@ export function Testimonials() {
               variant="outline"
               size="icon"
               onClick={next}
-              className="rounded-full"
+              className="rounded-full h-8 w-8 sm:h-10 sm:w-10"
             >
-              <ChevronRight className="h-5 w-5" />
+              <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
               <span className="sr-only">Next testimonial</span>
             </Button>
           </div>

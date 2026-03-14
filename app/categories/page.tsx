@@ -52,21 +52,20 @@ export default function CategoriesPage() {
   )
 
   useEffect(() => {
-    const slugs = Object.keys(categoryMeta)
-    Promise.all(
-      slugs.map((slug) =>
-        productsApi.list({ category: slug, limit: 1 })
-          .then((res) => ({ slug, total: res.total || 0 }))
-          .catch(() => ({ slug, total: dummyCategoryCounts[slug] || 0 }))
-      )
-    ).then((counts) => {
-      setCategories((prev) =>
-        prev.map((cat) => {
-          const found = counts.find((c) => c.slug === cat.slug)
-          return found ? { ...cat, productCount: found.total || cat.productCount } : cat
-        })
-      )
-    })
+    productsApi
+      .getCategories()
+      .then((data) => {
+        const bySlug = new Map(data.categories?.map((c) => [c.slug, c.productCount]) ?? [])
+        setCategories((prev) =>
+          prev.map((cat) => ({
+            ...cat,
+            productCount: bySlug.get(cat.slug) ?? dummyCategoryCounts[cat.slug] ?? cat.productCount,
+          }))
+        )
+      })
+      .catch(() => {
+        // Fallback: keep initial counts from dummyCategoryCounts (already set)
+      })
   }, [])
 
   return (

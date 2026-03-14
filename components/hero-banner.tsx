@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { ChevronLeft, ChevronRight } from "lucide-react"
 import { bannersApi, type Banner } from "@/lib/api"
 
 const fallbackBanners = [
@@ -60,11 +59,8 @@ export function HeroBanner() {
     return () => clearInterval(timer)
   }, [banners.length])
 
-  const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % banners.length)
-  const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + banners.length) % banners.length)
-
   return (
-    <section className="relative h-[42vh] sm:h-[55vh] md:h-[70vh] lg:h-[80vh] overflow-hidden">
+    <section className="relative min-h-[38vh] h-[44vh] sm:h-[50vh] sm:min-h-[280px] md:h-[60vh] lg:h-[72vh] overflow-hidden">
       {banners.map((banner, index) => (
         <div
           key={banner._id}
@@ -77,13 +73,14 @@ export function HeroBanner() {
             src={banner.image}
             alt={banner.title}
             fill
-            className="object-cover"
+            className="object-cover object-center sm:object-left"
             priority={index === 0}
+            sizes="100vw"
           />
-          <div className="relative z-20 h-full flex items-center">
-            <div className="container mx-auto px-4">
-              <div className="max-w-xl">
-                <h1 className="text-lg sm:text-2xl md:text-4xl lg:text-5xl font-serif font-bold text-background mb-2 sm:mb-4 leading-tight">
+          <div className="relative z-20 h-full flex items-end sm:items-center">
+            <div className="container mx-auto px-4 sm:px-5 w-full">
+              <div className="max-w-xl pb-7 sm:pb-0">
+                <h1 className="text-base sm:text-2xl md:text-4xl lg:text-5xl font-serif font-bold text-background mb-2 sm:mb-4 leading-tight">
                   {banner.title}
                 </h1>
                 {banner.subtitle && (
@@ -92,7 +89,11 @@ export function HeroBanner() {
                   </p>
                 )}
                 {banner.link && (
-                  <Button asChild size="sm" className="text-xs sm:text-base sm:h-11 sm:px-8">
+                  <Button
+                    asChild
+                    size="sm"
+                    className="w-auto h-9 sm:h-11 px-5 sm:px-8 text-xs sm:text-base"
+                  >
                     <Link href={banner.link}>{banner.cta || "Shop Now"}</Link>
                   </Button>
                 )}
@@ -103,23 +104,7 @@ export function HeroBanner() {
       ))}
 
       {banners.length > 1 && (
-        <>
-          <button
-            onClick={prevSlide}
-            className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-30 w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-background/20 hover:bg-background/40 backdrop-blur rounded-full flex items-center justify-center text-background transition-colors"
-            aria-label="Previous slide"
-          >
-            <ChevronLeft className="h-4 w-4 sm:h-6 sm:w-6" />
-          </button>
-          <button
-            onClick={nextSlide}
-            className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-30 w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-background/20 hover:bg-background/40 backdrop-blur rounded-full flex items-center justify-center text-background transition-colors"
-            aria-label="Next slide"
-          >
-            <ChevronRight className="h-4 w-4 sm:h-6 sm:w-6" />
-          </button>
-
-          <div className="absolute bottom-3 sm:bottom-6 left-1/2 -translate-x-1/2 z-30 flex gap-1.5 sm:gap-2">
+        <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-30 flex gap-2">
             {banners.map((_, index) => (
               <button
                 key={index}
@@ -130,8 +115,7 @@ export function HeroBanner() {
                 aria-label={`Go to slide ${index + 1}`}
               />
             ))}
-          </div>
-        </>
+        </div>
       )}
     </section>
   )

@@ -155,7 +155,7 @@ function OrderConfirmationContent() {
                 </div>
                 <p className="text-sm text-muted-foreground mb-4">
                   Set a password to create your Shri Aaum account. You will be able to track all your orders,
-                  manage addresses, save to wishlist, and checkout faster next time.
+                  manage addresses, and checkout faster next time.
                 </p>
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

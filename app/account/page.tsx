@@ -15,7 +15,6 @@ import {
   User,
   Package,
   MapPin,
-  Heart,
   LogOut,
   ChevronRight,
   Eye,
@@ -63,14 +62,9 @@ export default function AccountPage() {
     router.push("/")
   }
 
-  const handleDeleteAddress = async (id: string) => {
-    try {
-      await authApi.deleteAddress(id)
-      await refreshUser()
-      toast.success("Address removed")
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Failed to delete")
-    }
+  const handleDeleteAddress = async (_id: string) => {
+    // Address deletion API not available yet – show a friendly message.
+    toast.info("Address removal will be available soon.")
   }
 
   if (loading) {
@@ -155,24 +149,46 @@ export default function AccountPage() {
                 <TabsContent value="addresses">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {user?.addresses?.map((address) => (
-                      <div key={address._id} className="bg-card rounded-lg border border-border p-6">
+                      <div
+                        key={address._id || address.label || address.line1}
+                        className="bg-card rounded-lg border border-border p-6"
+                      >
                         <div className="flex items-start justify-between mb-4">
-                          <h4 className="font-medium text-foreground">{address.name || user.name}</h4>
+                          <div>
+                            <h4 className="font-medium text-foreground">
+                              {address.label || "Shipping Address"}
+                            </h4>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              {user.name}
+                              {user.phone ? ` \u2022 ${user.phone}` : ""}
+                            </p>
+                          </div>
                           {address.isDefault && <Badge variant="secondary">Default</Badge>}
                         </div>
                         <p className="text-sm text-muted-foreground mb-1">{address.line1}</p>
-                        {address.line2 && <p className="text-sm text-muted-foreground mb-1">{address.line2}</p>}
-                        <p className="text-sm text-muted-foreground mb-1">{address.city}, {address.state} - {address.pincode}</p>
-                        {address.phone && <p className="text-sm text-muted-foreground mb-4">{address.phone}</p>}
-                        <div className="flex gap-2">
+                        {address.line2 && (
+                          <p className="text-sm text-muted-foreground mb-1">{address.line2}</p>
+                        )}
+                        <p className="text-sm text-muted-foreground mb-1">
+                          {address.city}, {address.state} - {address.pincode}
+                        </p>
+                        <div className="flex gap-2 mt-3">
                           {!address.isDefault && address._id && (
-                            <Button variant="ghost" size="sm" onClick={() => handleDeleteAddress(address._id!)}>Remove</Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteAddress(address._id!)}
+                            >
+                              Remove
+                            </Button>
                           )}
                         </div>
                       </div>
                     ))}
                     {(!user?.addresses || user.addresses.length === 0) && (
-                      <p className="text-muted-foreground col-span-2 text-center py-8">No saved addresses. Addresses are saved when you place an order.</p>
+                      <p className="text-muted-foreground col-span-2 text-center py-8">
+                        No saved addresses. Addresses are saved when you place an order.
+                      </p>
                     )}
                   </div>
                 </TabsContent>

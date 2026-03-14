@@ -116,6 +116,14 @@ export default function OrdersPage() {
                 const deliveredDate = order.deliveredAt ? new Date(order.deliveredAt).toLocaleDateString("en-IN", { dateStyle: "medium" }) : null
                 const canReturn = isDelivered && order.deliveredAt && !order.returnRequest &&
                   (Date.now() - new Date(order.deliveredAt).getTime()) < 14 * 24 * 60 * 60 * 1000
+                const computedTotal =
+                  typeof order.total === "number"
+                    ? order.total
+                    : typeof order.grandTotal === "number"
+                      ? order.grandTotal
+                      : ((order.itemsTotal ?? order.subtotal ?? 0) +
+                        (order.shippingCharge ?? 0) -
+                        (order.discount ?? 0))
 
                 return (
                   <div key={order._id} className="bg-card rounded-lg border border-border overflow-hidden">
@@ -125,7 +133,7 @@ export default function OrdersPage() {
                         <div className="hidden sm:block h-8 w-px bg-border" />
                         <div><p className="text-sm text-muted-foreground">Placed on</p><p className="font-medium">{new Date(order.createdAt).toLocaleDateString("en-IN", { dateStyle: "medium" })}</p></div>
                         <div className="hidden sm:block h-8 w-px bg-border" />
-                        <div><p className="text-sm text-muted-foreground">Total</p><p className="font-semibold">₹{order.total.toLocaleString('en-IN')}</p></div>
+                        <div><p className="text-sm text-muted-foreground">Total</p><p className="font-semibold">₹{computedTotal.toLocaleString('en-IN')}</p></div>
                         <div className="hidden sm:block h-8 w-px bg-border" />
                         <div><p className="text-sm text-muted-foreground">Payment</p><p className="font-medium capitalize">{order.paymentMethod}</p></div>
                       </div>
@@ -137,20 +145,40 @@ export default function OrdersPage() {
 
                     <div className="p-4 md:p-6">
                       <div className="space-y-4">
-                        {order.items.map((item, i) => (
-                          <div key={i} className="flex gap-4">
-                            <Link href={`/product/${item.product?.slug || item.product?._id}`} className="shrink-0">
-                              <div className="w-20 h-20 relative rounded-md overflow-hidden bg-muted">
-                                <Image src={item.product?.images?.[0] || "/placeholder.svg"} alt={item.product?.name || "Product"} fill className="object-cover" />
+                        {order.items.map((item, i) => {
+                          const imgSrc =
+                            item.product?.primaryImage?.url ||
+                            item.image ||
+                            "/placeholder.svg"
+                          return (
+                            <div key={i} className="flex gap-4">
+                              <Link
+                                href={`/product/${item.product?.slug || item.product?._id}`}
+                                className="shrink-0"
+                              >
+                                <div className="w-20 h-20 relative rounded-md overflow-hidden bg-muted">
+                                  <Image
+                                    src={imgSrc}
+                                    alt={item.product?.name || "Product"}
+                                    fill
+                                    className="object-cover"
+                                  />
+                                </div>
+                              </Link>
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-medium text-foreground line-clamp-1">
+                                  {item.product?.name}
+                                </h4>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  Qty: {item.quantity}
+                                </p>
+                                <p className="font-medium mt-1">
+                                  ₹{(item.price * item.quantity).toLocaleString("en-IN")}
+                                </p>
                               </div>
-                            </Link>
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-medium text-foreground line-clamp-1">{item.product?.name}</h4>
-                              <p className="text-sm text-muted-foreground mt-1">Qty: {item.quantity}</p>
-                              <p className="font-medium mt-1">₹{(item.price * item.quantity).toLocaleString('en-IN')}</p>
                             </div>
-                          </div>
-                        ))}
+                          )
+                        })}
                       </div>
 
                       <div className="mt-6 pt-6 border-t border-border">

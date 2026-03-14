@@ -45,7 +45,8 @@ export default function CartPage() {
   }
 
   const subtotal = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0)
-  const shipping = subtotal > 999 ? 0 : 99
+  // Testing phase: shipping is always free (₹0)
+  const shipping = 0
   const total = subtotal - discount + shipping
 
   const applyCoupon = async () => {
@@ -174,7 +175,7 @@ export default function CartPage() {
                   )}
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Shipping</span>
-                    <span className="text-foreground">{shipping === 0 ? <span className="text-green-600">FREE</span> : `₹${shipping}`}</span>
+                    <span className="text-green-600">FREE</span>
                   </div>
                   <div className="border-t border-border pt-3">
                     <div className="flex justify-between">
@@ -184,12 +185,7 @@ export default function CartPage() {
                     <p className="text-xs text-muted-foreground mt-1">Inclusive of all taxes</p>
                   </div>
                 </div>
-                {shipping > 0 && (
-                  <div className="flex items-center gap-2 p-3 bg-secondary rounded-md mt-4">
-                    <Truck className="h-4 w-4 text-primary shrink-0" />
-                    <p className="text-xs text-muted-foreground">Add ₹{(1000 - subtotal).toLocaleString('en-IN')} more for FREE shipping</p>
-                  </div>
-                )}
+                {/* Free‑shipping upsell hidden during testing while shipping is always free */}
                 <Button asChild className="w-full mt-6 gap-2">
                   <Link href="/checkout">Proceed to Checkout<ArrowRight className="h-4 w-4" /></Link>
                 </Button>

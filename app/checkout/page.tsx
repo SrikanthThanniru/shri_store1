@@ -20,8 +20,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Shield, Lock, ChevronRight, CreditCard, Smartphone, Banknote, Truck, User, Mail, ArrowRight, MessageCircle, Loader2 } from "lucide-react"
-import { ordersApi, paymentsApi, authApi, couponsApi, getProductImage, type Address } from "@/lib/api"
+import { Shield, Lock, ChevronRight, CreditCard, Smartphone, Truck, User, ArrowRight, MessageCircle, Loader2, CheckCircle, XCircle, Package } from "lucide-react"
+import { ordersApi, paymentsApi, authApi, couponsApi, shippingApi, getProductImage, type Address, type CourierRate } from "@/lib/api"
 import { useAuth } from "@/lib/auth-context"
 import { useCart } from "@/lib/cart-context"
 import { toast } from "sonner"
@@ -66,12 +66,20 @@ export default function CheckoutPage() {
 
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
+  const [email, setEmail] = useState("")
+  const [phone, setPhone] = useState("")
   const [line1, setLine1] = useState("")
   const [line2, setLine2] = useState("")
   const [city, setCity] = useState("")
   const [state, setState] = useState("")
   const [pincode, setPincode] = useState("")
+  const [weight] = useState(0.5)
   const [notes, setNotes] = useState("")
+
+  const [pincodeStatus, setPincodeStatus] = useState<"idle" | "checking" | "serviceable" | "not-serviceable">("idle")
+  const [courierRates, setCourierRates] = useState<CourierRate[]>([])
+  const [selectedCourier, setSelectedCourier] = useState<number | null>(null)
+  const [ratesLoading, setRatesLoading] = useState(false)
 
   useEffect(() => {
     if (isLoggedIn) {
@@ -81,6 +89,8 @@ export default function CheckoutPage() {
         const def = user.addresses.find((a) => a.isDefault) || user.addresses[0]
         setFirstName(user.name?.split(" ")[0] || "")
         setLastName(user.name?.split(" ").slice(1).join(" ") || "")
+        setPhone(user.phone || "")
+        setEmail(user.email || "")
         setLine1(def.line1)
         setLine2(def.line2 || "")
         setCity(def.city)
@@ -90,18 +100,71 @@ export default function CheckoutPage() {
     }
   }, [isLoggedIn, user])
 
+  // Pincode serviceability / courier-rate API is disabled for now.
+  // We keep local state but do not hit the backend.
+  const checkPincode = async (pin: string) => {
+    if (pin.length !== 6) {
+      setPincodeStatus("idle")
+      setCourierRates([])
+      setSelectedCourier(null)
+      return
+    }
+    setPincodeStatus("idle")
+    setCourierRates([])
+    setSelectedCourier(null)
+  }
+
+  const fetchCourierRates = async (_pin: string) => {
+    setRatesLoading(false)
+    setCourierRates([])
+    setSelectedCourier(null)
+  }
+
+  const handlePincodeChange = (val: string) => {
+    const cleaned = val.replace(/\D/g, "").slice(0, 6)
+    setPincode(cleaned)
+    setPincodeStatus("idle")
+    setCourierRates([])
+    setSelectedCourier(null)
+  }
+
+  const validateShippingForm = (): boolean => {
+    const contactPhone = checkoutMode === "guest" ? guestPhone : phone
+    const contactName = checkoutMode === "guest" ? guestName : `${firstName} ${lastName}`.trim()
+
+    if (!contactName.trim()) { toast.error("Please enter your name"); return false }
+    if (!contactPhone.trim() || !/^\d{10}$/.test(contactPhone.replace(/\D/g, ""))) {
+      toast.error("Please enter a valid 10-digit phone number"); return false
+    }
+    const contactEmail = checkoutMode === "guest" ? guestEmail : email
+    if (contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) {
+      toast.error("Please enter a valid email address"); return false
+    }
+    if (!line1.trim()) { toast.error("Please enter your address"); return false }
+    if (!city.trim()) { toast.error("Please enter your city"); return false }
+    if (!state.trim()) { toast.error("Please select your state"); return false }
+    if (!/^\d{6}$/.test(pincode)) { toast.error("Please enter a valid 6-digit pincode"); return false }
+    if (pincodeStatus === "not-serviceable") { toast.error("Delivery is not available to this pincode"); return false }
+    return true
+  }
+
+  const selectedRate = courierRates.find((r) => r.courier_company_id === selectedCourier)
   const subtotal = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0)
-  const shipping = subtotal > 999 ? 0 : 99
+  // For testing phase, shipping is always free (₹0)
+  const shippingCost = 0
+  const shipping = shippingCost
   const total = subtotal - discount + shipping
 
   const shippingAddress: Address = {
     name: checkoutMode === "guest" ? guestName : `${firstName} ${lastName}`.trim(),
+    phone: checkoutMode === "guest" ? guestPhone : (phone || user?.phone),
+    email: checkoutMode === "guest" ? guestEmail : (email || user?.email),
     line1,
     line2: line2 || undefined,
     city,
     state,
     pincode,
-    phone: checkoutMode === "guest" ? guestPhone : user?.phone,
+    weight,
   }
 
   const handleApplyCoupon = async () => {
@@ -132,6 +195,8 @@ export default function CheckoutPage() {
               razorpay_signature: response.razorpay_signature,
               orderId,
             })
+            // Clear cart after successful online payment
+            await clearCart()
             router.push(`/order-confirmation?orderId=${orderId}&mode=${checkoutMode}&total=${total}`)
           } catch {
             toast.error("Payment verification failed. Please contact support.")
@@ -152,13 +217,28 @@ export default function CheckoutPage() {
   }
 
   const handlePlaceOrder = async () => {
-    if (!line1 || !city || !state || !pincode) {
-      toast.error("Please fill in all address fields")
-      return
-    }
+    if (!validateShippingForm()) return
     setPlacing(true)
     try {
+      // Debug logs so backend grandTotal can be cross-checked
+      console.log("[Checkout] placing order with totals", {
+        mode: checkoutMode,
+        paymentMethod,
+        subtotal,
+        shipping,
+        discount,
+        total,
+        items: items.map((i) => ({
+          productId: i.product._id,
+          name: i.product.name,
+          price: i.product.price,
+          quantity: i.quantity,
+        })),
+      })
+
       let result
+      const courierInfo = selectedRate ? { courier_company_id: selectedRate.courier_company_id, courier_name: selectedRate.courier_name, shipping_cost: selectedRate.rate } : undefined
+
       if (checkoutMode === "guest") {
         result = await ordersApi.createGuest({
           guestInfo: { name: guestName, email: guestEmail, phone: guestPhone },
@@ -167,6 +247,7 @@ export default function CheckoutPage() {
           paymentMethod: paymentMethod === "razorpay" ? "razorpay" : "cod",
           couponCode: discount > 0 ? couponCode : undefined,
           notes: notes || undefined,
+          ...(courierInfo && { courierInfo }),
         })
       } else {
         result = await ordersApi.create({
@@ -174,13 +255,14 @@ export default function CheckoutPage() {
           paymentMethod: paymentMethod === "razorpay" ? "razorpay" : "cod",
           couponCode: discount > 0 ? couponCode : undefined,
           notes: notes || undefined,
+          ...(courierInfo && { courierInfo }),
         })
       }
 
-      const orderId = result.order.orderId
+      const orderId = result.order.orderId || result.order._id
 
       if (result.paymentRequired && paymentMethod === "razorpay") {
-        await openRazorpay(orderId)
+        await openRazorpay(orderId!)
       } else {
         await clearCart()
         router.push(`/order-confirmation?orderId=${orderId}&mode=${checkoutMode}&total=${total}`)
@@ -361,41 +443,106 @@ export default function CheckoutPage() {
               {/* Step 2: Shipping */}
               {step === "details" && (
                 <div className="space-y-6">
-                  <div className="bg-card rounded-lg border border-border p-6">
-                    <h2 className="text-lg font-semibold text-foreground mb-4">Shipping Address</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2"><Label>First Name</Label><Input value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="Rahul" /></div>
-                      <div className="space-y-2"><Label>Last Name</Label><Input value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Sharma" /></div>
-                      <div className="space-y-2 md:col-span-2"><Label>Address Line 1</Label><Input value={line1} onChange={(e) => setLine1(e.target.value)} placeholder="House/Flat No., Building Name" /></div>
-                      <div className="space-y-2 md:col-span-2"><Label>Address Line 2 (Optional)</Label><Input value={line2} onChange={(e) => setLine2(e.target.value)} placeholder="Street, Area, Landmark" /></div>
-                      <div className="space-y-2"><Label>City</Label><Input value={city} onChange={(e) => setCity(e.target.value)} placeholder="Mumbai" /></div>
-                      <div className="space-y-2"><Label>State</Label>
+                  <div className="bg-card rounded-lg border border-border p-5 sm:p-6">
+                    <h2 className="text-sm sm:text-base font-semibold text-foreground mb-4">Shipping Address</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                      <div className="space-y-1.5"><Label className="text-xs sm:text-sm">First Name</Label><Input value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="Rahul" /></div>
+                      <div className="space-y-1.5"><Label className="text-xs sm:text-sm">Last Name</Label><Input value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Sharma" /></div>
+                      <div className="space-y-1.5"><Label className="text-xs sm:text-sm">Phone (10 digits)</Label><Input value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))} placeholder="9876543210" maxLength={10} /></div>
+                      <div className="space-y-1.5"><Label className="text-xs sm:text-sm">Email (Optional)</Label><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your@email.com" /></div>
+                      <div className="space-y-1.5 md:col-span-2"><Label className="text-xs sm:text-sm">Address Line 1</Label><Input value={line1} onChange={(e) => setLine1(e.target.value)} placeholder="House/Flat No., Building Name" /></div>
+                      <div className="space-y-1.5 md:col-span-2"><Label className="text-xs sm:text-sm">Address Line 2 (Optional)</Label><Input value={line2} onChange={(e) => setLine2(e.target.value)} placeholder="Street, Area, Landmark" /></div>
+                      <div className="space-y-1.5"><Label className="text-xs sm:text-sm">City</Label><Input value={city} onChange={(e) => setCity(e.target.value)} placeholder="Mumbai" /></div>
+                      <div className="space-y-1.5"><Label className="text-xs sm:text-sm">State</Label>
                         <Select value={state} onValueChange={setState}>
                           <SelectTrigger><SelectValue placeholder="Select state" /></SelectTrigger>
                           <SelectContent>{indianStates.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
                         </Select>
                       </div>
-                      <div className="space-y-2"><Label>PIN Code</Label><Input value={pincode} onChange={(e) => setPincode(e.target.value)} placeholder="400001" /></div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs sm:text-sm">PIN Code (6 digits)</Label>
+                        <div className="relative">
+                          <Input
+                            value={pincode}
+                            onChange={(e) => handlePincodeChange(e.target.value)}
+                            placeholder="400001"
+                            maxLength={6}
+                            className={pincodeStatus === "not-serviceable" ? "border-destructive" : pincodeStatus === "serviceable" ? "border-green-500" : ""}
+                          />
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                            {pincodeStatus === "checking" && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                            {pincodeStatus === "serviceable" && <CheckCircle className="h-4 w-4 text-green-500" />}
+                            {pincodeStatus === "not-serviceable" && <XCircle className="h-4 w-4 text-destructive" />}
+                          </div>
+                        </div>
+                        {pincodeStatus === "serviceable" && (
+                          <p className="text-[10px] sm:text-xs text-green-600 mt-0.5">Delivery available to this pincode</p>
+                        )}
+                        {pincodeStatus === "not-serviceable" && (
+                          <p className="text-[10px] sm:text-xs text-destructive mt-0.5">Delivery not available to this pincode</p>
+                        )}
+                      </div>
                     </div>
                     <div className="flex items-center gap-2 mt-4">
                       <Checkbox id="sameAsBilling" checked={sameAsBilling} onCheckedChange={(c) => setSameAsBilling(c as boolean)} />
-                      <Label htmlFor="sameAsBilling" className="text-sm cursor-pointer">Billing address same as shipping</Label>
+                      <Label htmlFor="sameAsBilling" className="text-xs sm:text-sm cursor-pointer">Billing address same as shipping</Label>
                     </div>
                   </div>
 
-                  <div className="bg-card rounded-lg border border-border p-6">
-                    <h2 className="text-lg font-semibold text-foreground mb-4">Order Notes (Optional)</h2>
-                    <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Any special instructions..." className="min-h-[100px]" />
+                  {/* Courier Selection */}
+                  {courierRates.length > 0 && (
+                    <div className="bg-card rounded-lg border border-border p-5 sm:p-6">
+                      <h2 className="text-sm sm:text-base font-semibold text-foreground mb-3">Shipping Method</h2>
+                      <RadioGroup value={String(selectedCourier)} onValueChange={(v) => setSelectedCourier(Number(v))}>
+                        <div className="space-y-2">
+                          {courierRates.map((rate) => (
+                            <label
+                              key={rate.courier_company_id}
+                              className={`flex items-center gap-3 p-3 sm:p-4 border rounded-lg cursor-pointer transition-colors ${selectedCourier === rate.courier_company_id ? "border-primary bg-primary/5" : "border-border"}`}
+                            >
+                              <RadioGroupItem value={String(rate.courier_company_id)} />
+                              <Package className="h-4 w-4 text-primary shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs sm:text-sm font-medium text-foreground">{rate.courier_name}</p>
+                                <p className="text-[10px] sm:text-xs text-muted-foreground">
+                                  Estimated delivery: {rate.etd || `${rate.estimated_delivery_days} days`}
+                                </p>
+                              </div>
+                              <span className="text-xs sm:text-sm font-semibold text-foreground shrink-0">
+                                ₹{rate.rate.toLocaleString("en-IN")}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      </RadioGroup>
+                    </div>
+                  )}
+                  {ratesLoading && (
+                    <div className="flex items-center gap-2 p-4 bg-card rounded-lg border border-border">
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                      <p className="text-xs sm:text-sm text-muted-foreground">Fetching shipping rates...</p>
+                    </div>
+                  )}
+
+                  <div className="bg-card rounded-lg border border-border p-5 sm:p-6">
+                    <h2 className="text-sm sm:text-base font-semibold text-foreground mb-3">Order Notes (Optional)</h2>
+                    <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Any special instructions..." className="min-h-[80px] text-xs sm:text-sm" />
                   </div>
 
                   <div className="flex items-center gap-2 p-3 bg-green-50 rounded-md">
                     <MessageCircle className="h-4 w-4 text-green-600 shrink-0" />
-                    <p className="text-xs text-green-700">Order updates will be sent via WhatsApp (Interakt) & SMS.</p>
+                    <p className="text-[10px] sm:text-xs text-green-700">Order updates will be sent via WhatsApp & SMS.</p>
                   </div>
 
-                  <div className="flex gap-4">
-                    {!isLoggedIn && <Button variant="outline" onClick={() => setStep("account")}>Back</Button>}
-                    <Button className="flex-1" size="lg" onClick={() => setStep("payment")}>Continue to Payment</Button>
+                  <div className="flex gap-3">
+                    {!isLoggedIn && <Button variant="outline" className="text-xs sm:text-sm" onClick={() => setStep("account")}>Back</Button>}
+                    <Button
+                      className="flex-1 text-xs sm:text-sm"
+                      size="lg"
+                      onClick={() => { if (validateShippingForm()) setStep("payment") }}
+                    >
+                      Continue to Payment
+                    </Button>
                   </div>
                 </div>
               )}

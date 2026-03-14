@@ -39,13 +39,17 @@ export interface User {
 }
 
 export interface Address {
-  name: string
+  _id?: string
+  label?: string
+  name?: string
+  phone?: string
+  email?: string
   line1: string
   line2?: string
   city: string
   state: string
   pincode: string
-  phone?: string
+  weight?: number
   isDefault?: boolean
 }
 
@@ -94,28 +98,46 @@ export interface Order {
   _id: string
   orderId?: string
   orderNumber: string
-  items: { product: Product; quantity: number; price: number }[]
+  items: { product: Product; quantity: number; price: number; image?: string }[]
   shippingAddress: Address
   paymentMethod: string
   paymentStatus: string
   orderStatus: string
-  subtotal: number
-  shippingCharge: number
-  discount: number
-  total: number
+  subtotal?: number
+  itemsTotal?: number
+  shippingCharge?: number
+  discount?: number
+  total?: number
+  grandTotal?: number
   tracking?: { carrier?: string; trackingId?: string; url?: string }
+  trackingId?: string
+  courierPartner?: string
+  deliveredAt?: string
+  returnRequest?: { status: string; createdAt?: string }
   createdAt: string
   updatedAt: string
 }
 
+export type TrackStatus = "processing" | "confirmed" | "shipped" | "out_for_delivery" | "delivered"
+
 export interface OrderTracking {
-  orderNumber: string
+  orderNumber?: string
+  orderId?: string
   orderStatus: string
+  status?: TrackStatus
+  current_status?: string
+  awb?: string
+  awbCode?: string
+  shiprocketOrderId?: string
+  trackingId?: string
+  courierPartner?: string
+  estimatedDelivery?: string
   tracking?: { carrier?: string; trackingId?: string; url?: string }
-  items: { product: { name: string }; quantity: number }[]
-  shippingAddress: Address
-  createdAt: string
+  items?: { product: { name: string }; quantity: number }[]
+  shippingAddress?: Address
+  createdAt?: string
   timeline?: { status: string; date: string; description?: string }[]
+  statusHistory?: { status: string; date?: string; timestamp?: string; note?: string }[]
 }
 
 // ─── Image Helpers ──────────────────────────────────────
@@ -205,6 +227,7 @@ export const ordersApi = {
     paymentMethod: string
     notes?: string
     couponCode?: string
+    courierInfo?: { courier_company_id: number; courier_name: string; shipping_cost: number }
   }) =>
     api.post<{ success: boolean; order: Order; paymentRequired?: boolean }>("/orders", data).then((r) => r.data),
 
@@ -215,17 +238,52 @@ export const ordersApi = {
     guestInfo: { name: string; email?: string; phone: string }
     notes?: string
     couponCode?: string
+    courierInfo?: { courier_company_id: number; courier_name: string; shipping_cost: number }
   }) =>
     api.post<{ success: boolean; order: Order; paymentRequired?: boolean }>("/orders/guest", data).then((r) => r.data),
 
   getMyOrders: () =>
-    api.get<{ success: boolean; orders: Order[] }>("/orders/my").then((r) => r.data),
+    api.get<{ success: boolean; orders: Order[] }>("/orders").then((r) => r.data),
 
   getById: (id: string) =>
     api.get<{ success: boolean; order: Order }>(`/orders/${id}`).then((r) => r.data),
 
+  trackOrderById: (id: string) =>
+    api.get<{ success?: boolean; status?: string; current_status?: string; awb?: string }>(`/track-order/${id}`).then((r) => {
+      const d = r.data as Record<string, unknown>
+      return {
+        success: Boolean(d.success),
+        order: {
+          orderId: id,
+          orderNumber: id,
+          orderStatus: (d.status as string) || "processing",
+          status: ((d.status as string) || "processing") as TrackStatus,
+          current_status: d.current_status as string | undefined,
+          awb: d.awb as string | undefined,
+        } as OrderTracking,
+      }
+    }),
+
   track: (orderIdOrNumber: string) =>
-    api.get<{ success: boolean; order: OrderTracking }>(`/orders/track/${orderIdOrNumber}`).then((r) => r.data),
+    api.get<{ success: boolean; order?: OrderTracking; status?: string; current_status?: string; awb?: string }>(`/orders/track/${orderIdOrNumber}`).then((r) => {
+      const d = r.data as Record<string, unknown>
+      const order = (d.order as OrderTracking) || {}
+      const status = (order.status || order.orderStatus || d.status || "processing") as string
+      const awb = order.awb || order.awbCode || order.trackingId || d.awb
+      return {
+        success: Boolean(d.success),
+        order: {
+          ...order,
+          orderId: order.orderId || order.orderNumber || orderIdOrNumber,
+          orderNumber: order.orderNumber || order.orderId || orderIdOrNumber,
+          orderStatus: status,
+          status: status as TrackStatus,
+          current_status: order.current_status || (d.current_status as string),
+          awb: awb as string | undefined,
+          trackingId: (order.trackingId || awb) as string | undefined,
+        } as OrderTracking,
+      }
+    }),
 
   requestReturn: (orderId: string, data: { reason: string; items?: string[]; refundMethod?: string }) =>
     api.post<{ success: boolean }>(`/orders/${orderId}/return`, data).then((r) => r.data),
@@ -234,7 +292,7 @@ export const ordersApi = {
 // ─── Payments ──────────────────────────────────────────
 export const paymentsApi = {
   createOrder: (orderId: string) =>
-    api.post<{ success: boolean; razorpayOrderId: string; amount: number; currency: string; key: string }>("/payments/create", { orderId }).then((r) => r.data),
+    api.post<{ success: boolean; razorpayOrderId: string; amount: number; currency: string; key: string }>("/payments/create-order", { orderId }).then((r) => r.data),
 
   verify: (data: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string; orderId: string }) =>
     api.post<{ success: boolean }>("/payments/verify", data).then((r) => r.data),
@@ -250,4 +308,21 @@ export const couponsApi = {
 export const bannersApi = {
   getActive: () =>
     api.get<{ success: boolean; banners: Banner[] }>("/banners/active").then((r) => r.data),
+}
+
+// ─── Shipping (Shiprocket) ─────────────────────────────
+export interface CourierRate {
+  courier_company_id: number
+  courier_name: string
+  rate: number
+  etd: string
+  estimated_delivery_days: number
+}
+
+export const shippingApi = {
+  checkServiceability: (pincode: string, weight: number = 0.5) =>
+    api.post<{ success: boolean; serviceable: boolean; message?: string }>("/shipping/serviceability", { pincode, weight }).then((r) => r.data),
+
+  getRates: (params: { pickup_pincode?: string; delivery_pincode: string; weight: number; cod?: boolean }) =>
+    api.post<{ success: boolean; rates: CourierRate[] }>("/shipping/rates", params).then((r) => r.data),
 }
