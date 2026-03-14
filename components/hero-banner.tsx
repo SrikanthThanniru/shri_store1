@@ -60,7 +60,7 @@ export function HeroBanner() {
   }, [banners.length])
 
   return (
-    <section className="relative min-h-[38vh] h-[44vh] sm:h-[50vh] sm:min-h-[280px] md:h-[60vh] lg:h-[72vh] overflow-hidden">
+    <section className="relative min-h-[100dvh] h-[100dvh] sm:min-h-[280px] sm:h-[50vh] md:h-[60vh] lg:h-[72vh] overflow-hidden">
       {banners.map((banner, index) => (
         <div
           key={banner._id}
@@ -77,14 +77,14 @@ export function HeroBanner() {
             priority={index === 0}
             sizes="100vw"
           />
-          <div className="relative z-20 h-full flex items-end sm:items-center">
+          <div className="relative z-20 h-full flex items-center justify-start">
             <div className="container mx-auto px-4 sm:px-5 w-full">
-              <div className="max-w-xl pb-7 sm:pb-0">
-                <h1 className="text-base sm:text-2xl md:text-4xl lg:text-5xl font-serif font-bold text-background mb-2 sm:mb-4 leading-tight">
+              <div className="max-w-xl py-6 sm:py-0 pb-20 sm:pb-0 text-left">
+                <h1 className="text-xl sm:text-2xl md:text-4xl lg:text-5xl font-serif font-bold text-background mb-2 sm:mb-4 leading-tight">
                   {banner.title}
                 </h1>
                 {banner.subtitle && (
-                  <p className="text-xs sm:text-base md:text-xl text-background/90 mb-3 sm:mb-8 line-clamp-2">
+                  <p className="text-sm sm:text-base md:text-xl text-background/90 mb-4 sm:mb-8 line-clamp-2">
                     {banner.subtitle}
                   </p>
                 )}
@@ -92,7 +92,7 @@ export function HeroBanner() {
                   <Button
                     asChild
                     size="sm"
-                    className="w-auto h-9 sm:h-11 px-5 sm:px-8 text-xs sm:text-base"
+                    className="w-auto h-10 sm:h-11 px-6 sm:px-8 text-sm sm:text-base shrink-0"
                   >
                     <Link href={banner.link}>{banner.cta || "Shop Now"}</Link>
                   </Button>
@@ -104,7 +104,7 @@ export function HeroBanner() {
       ))}
 
       {banners.length > 1 && (
-        <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-30 flex gap-2">
+        <div className="absolute bottom-20 sm:bottom-6 left-1/2 -translate-x-1/2 z-30 flex gap-2">
             {banners.map((_, index) => (
               <button
                 key={index}

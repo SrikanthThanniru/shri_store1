@@ -56,14 +56,14 @@ export function Header() {
     <header className="sticky top-0 z-50 bg-background border-b border-border">
       <div className="container mx-auto px-4 sm:px-5">
         {/* Mobile header: Logo | Search bar | Account icon */}
-        <div className="flex lg:hidden items-center justify-between h-12">
+        <div className="flex lg:hidden items-center justify-between h-16 min-h-16 py-2">
           <Link href="/" className="shrink-0">
             <Image
               src="/logo.png"
               alt="Shri Aaum"
-              width={44}
-              height={44}
-              className="h-10 w-10 object-contain"
+              width={52}
+              height={52}
+              className="h-12 w-12 object-contain"
             />
           </Link>
 
@@ -75,14 +75,14 @@ export function Header() {
                 placeholder="Search"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-8 pl-8 pr-3 text-xs rounded-full bg-secondary border-none"
+                className="w-full h-10 pl-9 pr-3 text-sm rounded-full bg-secondary border-none"
               />
             </div>
           </form>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="shrink-0 h-9 w-9">
+              <Button variant="ghost" size="icon" className="shrink-0 h-11 w-11">
                 <User className="h-6 w-6" />
                 <span className="sr-only">Account</span>
               </Button>
