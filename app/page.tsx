@@ -11,7 +11,7 @@ export default function HomePage() {
     <div className="min-h-screen flex flex-col">
       <TrustBadges />
       <Header />
-      <main className="flex-1">
+      <main className="flex-1 pb-14 lg:pb-0">
         <HeroBanner />
         <CategoriesSection />
         <FeaturedProducts />
