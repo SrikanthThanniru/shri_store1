@@ -81,7 +81,7 @@ export function CategoriesSection() {
             <Link
               key={category.slug || category.name || index}
               href={category.href}
-              className="group relative overflow-hidden rounded-lg aspect-[4/3] sm:aspect-[4/5] bg-muted"
+              className="group relative overflow-hidden rounded-xl aspect-[4/3] sm:aspect-[4/5] bg-muted shadow-md hover:shadow-lg transition-shadow duration-300"
             >
               <Image
                 src={category.image || "/placeholder.svg"}
@@ -89,12 +89,12 @@ export function CategoriesSection() {
                 fill
                 className="object-cover transition-transform duration-500 group-hover:scale-105"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/15 to-transparent" />
               <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-6">
-                <h3 className="text-xs sm:text-xl font-serif font-semibold text-background leading-tight">
+                <h3 className="text-xs sm:text-xl font-serif font-semibold text-background leading-tight drop-shadow-sm">
                   {category.name}
                 </h3>
-                <span className="text-[9px] sm:text-xs text-background/70">
+                <span className="text-[9px] sm:text-xs text-background/90 font-medium">
                   {category.productCount} Products
                 </span>
               </div>

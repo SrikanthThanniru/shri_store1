@@ -55,19 +55,19 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 bg-background border-b border-border">
       <div className="container mx-auto px-4 sm:px-5">
-        {/* Mobile header: Logo | Search bar | Account icon */}
-        <div className="flex lg:hidden items-center justify-between h-16 min-h-16 py-2">
+        {/* Mobile header: Logo | Search bar | Account icon - logo & profile at ends */}
+        <div className="flex lg:hidden items-center justify-between gap-2 h-16 min-h-16 py-2 w-full">
           <Link href="/" className="shrink-0">
             <Image
               src="/logo.png"
               alt="Shri Aaum"
-              width={52}
-              height={52}
-              className="h-12 w-12 object-contain"
+              width={56}
+              height={56}
+              className="h-14 w-14 object-contain"
             />
           </Link>
 
-          <form onSubmit={handleSearch} className="w-[50%]">
+          <form onSubmit={handleSearch} className="flex-1 min-w-0">
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
@@ -82,8 +82,8 @@ export function Header() {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="shrink-0 h-11 w-11">
-                <User className="h-6 w-6" />
+              <Button variant="ghost" size="icon" className="shrink-0 h-14 w-14 p-1">
+                <User className="h-12 w-12 stroke-[2.5]" />
                 <span className="sr-only">Account</span>
               </Button>
             </DropdownMenuTrigger>
