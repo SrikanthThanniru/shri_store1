@@ -107,55 +107,53 @@ export function HeroBanner() {
             </div>
           </div>
 
-          {/* Desktop: full-bleed image + overlay gradient (no partition), content on left */}
-          <div className="hidden lg:block absolute inset-0">
-            <Image
-              src={banner.image}
-              alt={banner.title}
-              fill
-              className="object-cover object-right"
-              priority={index === 0}
-              sizes="100vw"
-            />
-            {/* Overlay gradient left-to-right — seamless blend, no partition line */}
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                background: `linear-gradient(to right,
-                  #3d0f0f 0%,
-                  #3d0f0f 28%,
-                  rgba(61,15,15,0.98) 35%,
-                  rgba(61,15,15,0.92) 42%,
-                  rgba(61,15,15,0.8) 48%,
-                  rgba(61,15,15,0.6) 54%,
-                  rgba(61,15,15,0.35) 62%,
-                  rgba(61,15,15,0.1) 72%,
-                  transparent 82%,
-                  transparent 100%
-                )`,
-              }}
-            />
-            {/* Content — positioned left, sits on gradient */}
-            <div className="absolute inset-0 z-10 flex items-center">
-              <div className="px-8 lg:px-12 xl:px-16 max-w-2xl">
-                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-serif font-bold text-amber-300 mb-3 sm:mb-4 leading-tight">
-                  {banner.title}
-                </h1>
-                {banner.subtitle && (
-                  <p className="text-sm sm:text-base md:text-lg lg:text-xl text-white/95 mb-5 sm:mb-6 lg:mb-8 leading-relaxed">
-                    {banner.subtitle}
-                  </p>
-                )}
-                {banner.link && (
-                  <Button
-                    asChild
-                    size="lg"
-                    className="w-fit bg-white text-gray-900 hover:bg-white/95 hover:text-gray-900 font-semibold h-11 sm:h-12 px-6 sm:px-8 text-sm sm:text-base rounded-lg"
-                  >
-                    <Link href={banner.link}>{banner.cta || "Shop Now"}</Link>
-                  </Button>
-                )}
-              </div>
+          {/* Desktop: same structure as mobile — left content, right image, gradient left-to-right */}
+          <div className="hidden lg:flex absolute inset-0">
+            {/* Left div: Content */}
+            <div className="flex-1 min-w-0 flex flex-col items-start justify-center px-8 xl:px-12 bg-[#3d0f0f] relative z-30">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-serif font-bold text-amber-300 mb-3 sm:mb-4 leading-tight">
+                {banner.title}
+              </h1>
+              {banner.subtitle && (
+                <p className="text-sm sm:text-base md:text-lg lg:text-xl text-white/95 mb-5 sm:mb-6 lg:mb-8 leading-relaxed max-w-xl">
+                  {banner.subtitle}
+                </p>
+              )}
+              {banner.link && (
+                <Button
+                  asChild
+                  size="lg"
+                  className="w-fit bg-white text-gray-900 hover:bg-white/95 hover:text-gray-900 font-semibold h-11 sm:h-12 px-6 sm:px-8 text-sm sm:text-base rounded-lg"
+                >
+                  <Link href={banner.link}>{banner.cta || "Shop Now"}</Link>
+                </Button>
+              )}
+            </div>
+            {/* Right div: Image — gradient overlay on image to hide partition line */}
+            <div className="flex-1 min-w-0 relative bg-[#3d0f0f] overflow-hidden">
+              <Image
+                src={banner.image}
+                alt={banner.title}
+                fill
+                className="object-cover object-center"
+                priority={index === 0}
+                sizes="50vw"
+              />
+              {/* Gradient left-to-right on image — hides partition at junction */}
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background: `linear-gradient(to right,
+                    #3d0f0f 0%,
+                    rgba(61,15,15,0.92) 15%,
+                    rgba(61,15,15,0.7) 28%,
+                    rgba(61,15,15,0.4) 42%,
+                    rgba(61,15,15,0.15) 58%,
+                    transparent 75%,
+                    transparent 100%
+                  )`,
+                }}
+              />
             </div>
           </div>
         </div>
