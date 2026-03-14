@@ -56,7 +56,7 @@ export function Header() {
     <header className="sticky top-0 z-50 bg-background border-b border-border">
       <div className="container mx-auto px-4 sm:px-5">
         {/* Mobile header: Logo | Search bar | Account icon - logo & profile at ends */}
-        <div className="flex lg:hidden items-center justify-between gap-2 h-16 min-h-16 py-2 w-full">
+        <div className="flex lg:hidden items-center justify-between gap-2 min-h-[clamp(4rem,12dvh,6rem)] h-[clamp(4rem,12dvh,6rem)] py-2 w-full">
           <Link href="/" className="shrink-0">
             <Image
               src="/logo.png"

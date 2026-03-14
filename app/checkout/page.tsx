@@ -60,10 +60,6 @@ export default function CheckoutPage() {
   const [couponCode, setCouponCode] = useState("")
   const [discount, setDiscount] = useState(0)
 
-  const [guestName, setGuestName] = useState("")
-  const [guestEmail, setGuestEmail] = useState("")
-  const [guestPhone, setGuestPhone] = useState("")
-
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
   const [email, setEmail] = useState("")
@@ -129,15 +125,13 @@ export default function CheckoutPage() {
   }
 
   const validateShippingForm = (): boolean => {
-    const contactPhone = checkoutMode === "guest" ? guestPhone : phone
-    const contactName = checkoutMode === "guest" ? guestName : `${firstName} ${lastName}`.trim()
+    const contactName = `${firstName} ${lastName}`.trim()
 
     if (!contactName.trim()) { toast.error("Please enter your name"); return false }
-    if (!contactPhone.trim() || !/^\d{10}$/.test(contactPhone.replace(/\D/g, ""))) {
+    if (!phone.trim() || !/^\d{10}$/.test(phone.replace(/\D/g, ""))) {
       toast.error("Please enter a valid 10-digit phone number"); return false
     }
-    const contactEmail = checkoutMode === "guest" ? guestEmail : email
-    if (contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) {
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       toast.error("Please enter a valid email address"); return false
     }
     if (!line1.trim()) { toast.error("Please enter your address"); return false }
@@ -156,9 +150,9 @@ export default function CheckoutPage() {
   const total = subtotal - discount + shipping
 
   const shippingAddress: Address = {
-    name: checkoutMode === "guest" ? guestName : `${firstName} ${lastName}`.trim(),
-    phone: checkoutMode === "guest" ? guestPhone : (phone || user?.phone),
-    email: checkoutMode === "guest" ? guestEmail : (email || user?.email),
+    name: `${firstName} ${lastName}`.trim(),
+    phone: phone || user?.phone || "",
+    email: email || user?.email || "",
     line1,
     line2: line2 || undefined,
     city,
@@ -204,7 +198,7 @@ export default function CheckoutPage() {
         },
         prefill: {
           name: shippingAddress.name,
-          email: checkoutMode === "guest" ? guestEmail : user?.email,
+          email: checkoutMode === "guest" ? email : user?.email,
           contact: shippingAddress.phone,
         },
         theme: { color: "#7c2d12" },
@@ -241,7 +235,7 @@ export default function CheckoutPage() {
 
       if (checkoutMode === "guest") {
         result = await ordersApi.createGuest({
-          guestInfo: { name: guestName, email: guestEmail, phone: guestPhone },
+          guestInfo: { name: `${firstName} ${lastName}`.trim(), email, phone },
           items: items.map((i) => ({ productId: i.product._id, quantity: i.quantity })),
           shippingAddress,
           paymentMethod: paymentMethod === "razorpay" ? "razorpay" : "cod",
@@ -274,12 +268,13 @@ export default function CheckoutPage() {
     }
   }
 
-  const currentStepIndex = step === "account" ? 0 : step === "details" ? 1 : 2
-  const steps = [
-    { key: "account", label: "Account" },
-    { key: "details", label: "Shipping" },
-    { key: "payment", label: "Payment" },
-  ]
+  const isGuest = checkoutMode === "guest"
+  const steps = isGuest
+    ? [{ key: "details", label: "Shipping" }, { key: "payment", label: "Payment" }]
+    : [{ key: "account", label: "Account" }, { key: "details", label: "Shipping" }, { key: "payment", label: "Payment" }]
+  const currentStepIndex = isGuest
+    ? (step === "details" ? 0 : 1)
+    : (step === "account" ? 0 : step === "details" ? 1 : 2)
 
   if (loading || cartLoading) {
     return (
@@ -318,7 +313,7 @@ export default function CheckoutPage() {
                   <p className="text-sm text-muted-foreground mb-2">How would you like to checkout?</p>
 
                   <button
-                    onClick={() => setCheckoutMode("guest")}
+                    onClick={() => { setCheckoutMode("guest"); setStep("details") }}
                     className="w-full bg-card rounded-lg border border-border p-5 flex items-center gap-4 hover:border-primary hover:shadow-sm transition-all text-left active:scale-[0.99]"
                   >
                     <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
@@ -349,41 +344,6 @@ export default function CheckoutPage() {
                     </div>
                     <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
                   </button>
-                </div>
-              )}
-
-              {/* Step 1a: Guest Form */}
-              {step === "account" && checkoutMode === "guest" && (
-                <div className="bg-card rounded-lg border border-border p-5 sm:p-6">
-                  <div className="flex items-center gap-3 mb-5">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <User className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <h2 className="text-sm sm:text-base font-semibold text-foreground">Guest Checkout</h2>
-                      <p className="text-xs sm:text-sm text-muted-foreground">Enter your details to continue</p>
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs sm:text-sm">Full Name</Label>
-                      <Input value={guestName} onChange={(e) => setGuestName(e.target.value)} placeholder="Rahul Sharma" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs sm:text-sm">Phone</Label>
-                      <Input value={guestPhone} onChange={(e) => setGuestPhone(e.target.value)} placeholder="+91 98765 43210" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs sm:text-sm">Email (Optional)</Label>
-                      <Input type="email" value={guestEmail} onChange={(e) => setGuestEmail(e.target.value)} placeholder="your@email.com" />
-                    </div>
-                  </div>
-                  <div className="flex gap-3 mt-5">
-                    <Button variant="outline" onClick={() => setCheckoutMode("choose")} className="text-xs sm:text-sm">Back</Button>
-                    <Button className="flex-1 gap-2 text-xs sm:text-sm" onClick={() => setStep("details")} disabled={!guestName || !guestPhone}>
-                      Continue to Shipping<ArrowRight className="h-4 w-4" />
-                    </Button>
-                  </div>
                 </div>
               )}
 
@@ -535,7 +495,11 @@ export default function CheckoutPage() {
                   </div>
 
                   <div className="flex gap-3">
-                    {!isLoggedIn && <Button variant="outline" className="text-xs sm:text-sm" onClick={() => setStep("account")}>Back</Button>}
+                    {!isLoggedIn && (
+                      <Button variant="outline" className="text-xs sm:text-sm" onClick={() => { if (isGuest) { setCheckoutMode("choose"); setStep("account") } else setStep("account") }}>
+                        Back
+                      </Button>
+                    )}
                     <Button
                       className="flex-1 text-xs sm:text-sm"
                       size="lg"

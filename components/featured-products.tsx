@@ -55,21 +55,13 @@ export function FeaturedProducts() {
   return (
     <section className="py-6 sm:py-10 md:py-12 lg:py-16 bg-secondary">
       <div className="container mx-auto px-4 sm:px-5">
-        <div className="flex items-end justify-between gap-3 mb-4 sm:mb-8 lg:mb-12">
-          <div className="min-w-0">
-            <h2 className="text-lg sm:text-2xl md:text-4xl font-serif font-bold text-foreground mb-1 sm:mb-2">
-              Featured Products
-            </h2>
-            <p className="text-xs sm:text-sm text-muted-foreground max-w-2xl hidden sm:block">
-              Handpicked spiritual essentials, blessed with authenticity and crafted with devotion
-            </p>
-          </div>
-          <Button asChild variant="outline" size="sm" className="text-xs sm:text-sm h-8 sm:h-10 px-3 sm:px-4 shrink-0">
-            <Link href="/categories" className="gap-1 sm:gap-2">
-              View All
-              <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            </Link>
-          </Button>
+        <div className="mb-4 sm:mb-8 lg:mb-12">
+          <h2 className="text-lg sm:text-2xl md:text-4xl font-serif font-bold text-foreground mb-1 sm:mb-2">
+            Featured Products
+          </h2>
+          <p className="text-xs sm:text-sm text-muted-foreground max-w-2xl hidden sm:block">
+            Handpicked spiritual essentials, blessed with authenticity and crafted with devotion
+          </p>
         </div>
 
         {loading ? (
@@ -86,11 +78,21 @@ export function FeaturedProducts() {
             ))}
           </div>
         ) : products.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-6">
-            {products.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-6">
+              {products.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+            <div className="flex justify-center mt-6 sm:mt-8">
+              <Button asChild variant="outline" size="sm" className="text-xs sm:text-sm h-8 sm:h-10 px-3 sm:px-4">
+                <Link href="/categories" className="gap-1 sm:gap-2">
+                  View All
+                  <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                </Link>
+              </Button>
+            </div>
+          </>
         ) : (
           <p className="text-center text-muted-foreground py-12">
             No products available. Check back soon!
