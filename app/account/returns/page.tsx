@@ -29,7 +29,7 @@ import {
   Loader2,
   Package,
 } from "lucide-react"
-import { ordersApi, type Order } from "@/lib/api"
+import { ordersApi, type Order, getProductImage } from "@/lib/api"
 import { useAuth } from "@/lib/auth-context"
 import { toast } from "sonner"
 
@@ -59,12 +59,12 @@ export default function AccountReturnsPage() {
     if (!isLoggedIn) { setLoading(false); return }
     ordersApi.getMyOrders()
       .then((data) => {
-        const eligible = data.orders.filter((o) =>
-          o.orderStatus === "delivered" &&
-          !o.returnRequest &&
-          o.deliveredAt &&
-          (Date.now() - new Date(o.deliveredAt).getTime()) < 14 * 24 * 60 * 60 * 1000
-        )
+        const eligible = data.orders.filter((o) => {
+          if (o.orderStatus !== "delivered" || !o.deliveredAt) return false
+          if (o.returnRequest || o.returnStatus === "requested" || o.exchangeStatus === "requested") return false
+          const within14Days = (Date.now() - new Date(o.deliveredAt).getTime()) < 14 * 24 * 60 * 60 * 1000
+          return within14Days
+        })
         setOrders(eligible)
       })
       .catch(() => {})
@@ -75,14 +75,15 @@ export default function AccountReturnsPage() {
     if (!selectedOrder || !reason) return
     setSubmitting(true)
     try {
-      await ordersApi.requestReturn(selectedOrder, {
-        reason,
-        requestType,
-        description: description || undefined,
-      })
+      const reasonText = description ? `${reason}: ${description}` : reason
+      if (requestType === "exchange") {
+        await ordersApi.requestExchange(selectedOrder, { reason: reasonText })
+      } else {
+        await ordersApi.requestReturn(selectedOrder, { reason: reasonText })
+      }
       setStep("confirm")
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Failed to submit return request")
+      toast.error(err instanceof Error ? err.message : "Failed to submit request")
     } finally {
       setSubmitting(false)
     }
@@ -146,17 +147,34 @@ export default function AccountReturnsPage() {
                       <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><RotateCcw className="h-5 w-5 text-primary" />Select Order</h2>
                       <div className="space-y-4">
                         {orders.map((order) => (
-                          <label key={order._id} className={`block p-4 border rounded-lg cursor-pointer transition-colors ${selectedOrder === order.orderId ? "border-primary bg-primary/5" : "border-border"}`}>
-                            <input type="radio" name="order" value={order.orderId} checked={selectedOrder === order.orderId} onChange={() => setSelectedOrder(order.orderId)} className="sr-only" />
+                          <label
+                            key={order._id}
+                            className={`block p-4 border rounded-lg cursor-pointer transition-colors ${
+                              selectedOrder === (order.orderId ?? order._id) ? "border-primary bg-primary/5" : "border-border"
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="order"
+                              value={order.orderId ?? order._id}
+                              checked={selectedOrder === (order.orderId ?? order._id)}
+                              onChange={() => setSelectedOrder(order.orderId ?? order._id)}
+                              className="sr-only"
+                            />
                             <div className="flex items-center justify-between mb-2">
                               <span className="font-medium">{order.orderId}</span>
-                              <Badge variant="secondary">₹{order.total.toLocaleString('en-IN')}</Badge>
+                              <Badge variant="secondary">₹{(order.total ?? 0).toLocaleString('en-IN')}</Badge>
                             </div>
                             <div className="space-y-2">
                               {order.items.map((item, i) => (
                                 <div key={i} className="flex gap-3 items-center">
                                   <div className="w-12 h-12 relative rounded overflow-hidden bg-muted shrink-0">
-                                    <Image src={item.product?.images?.[0] || "/placeholder.svg"} alt={item.product?.name || ""} fill className="object-cover" />
+                                    <Image
+                                      src={item.image || getProductImage(item.product)}
+                                      alt={item.product?.name || ""}
+                                      fill
+                                      className="object-cover"
+                                    />
                                   </div>
                                   <div className="flex-1 min-w-0">
                                     <p className="text-sm font-medium line-clamp-1">{item.product?.name}</p>

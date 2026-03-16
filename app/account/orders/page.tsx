@@ -115,6 +115,7 @@ export default function OrdersPage() {
                 const isShipped = ["shipped", "dispatched"].includes(order.orderStatus)
                 const deliveredDate = order.deliveredAt ? new Date(order.deliveredAt).toLocaleDateString("en-IN", { dateStyle: "medium" }) : null
                 const canReturn = isDelivered && order.deliveredAt && !order.returnRequest &&
+                  order.returnStatus !== "requested" && order.exchangeStatus !== "requested" &&
                   (Date.now() - new Date(order.deliveredAt).getTime()) < 14 * 24 * 60 * 60 * 1000
                 const computedTotal =
                   typeof order.total === "number"
@@ -193,8 +194,11 @@ export default function OrdersPage() {
                             <p className="text-sm text-muted-foreground">AWB: {order.trackingId}{order.courierPartner ? ` via ${order.courierPartner}` : ""}</p>
                           </div>
                         )}
-                        {order.returnRequest && (
-                          <p className="text-sm text-amber-600 mt-2"><RotateCcw className="h-4 w-4 inline mr-1" />Return {order.returnRequest.status}</p>
+                        {(order.returnRequest || order.returnStatus === "requested") && (
+                          <p className="text-sm text-amber-600 mt-2"><RotateCcw className="h-4 w-4 inline mr-1" />Return {order.returnRequest?.status ?? "requested"}</p>
+                        )}
+                        {order.exchangeStatus === "requested" && (
+                          <p className="text-sm text-amber-600 mt-2"><RotateCcw className="h-4 w-4 inline mr-1" />Exchange requested</p>
                         )}
                       </div>
 

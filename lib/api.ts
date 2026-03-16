@@ -114,6 +114,9 @@ export interface Order {
   courierPartner?: string
   deliveredAt?: string
   returnRequest?: { status: string; createdAt?: string }
+  returnStatus?: string
+  returnReason?: string
+  exchangeStatus?: string
   createdAt: string
   updatedAt: string
 }
@@ -285,8 +288,11 @@ export const ordersApi = {
       }
     }),
 
-  requestReturn: (orderId: string, data: { reason: string; items?: string[]; refundMethod?: string }) =>
+  requestReturn: (orderId: string, data: { reason?: string }) =>
     api.post<{ success: boolean }>(`/orders/${orderId}/return`, data).then((r) => r.data),
+
+  requestExchange: (orderId: string, data: { reason?: string; exchangeItems?: string[] }) =>
+    api.post<{ success: boolean }>(`/orders/${orderId}/exchange`, data).then((r) => r.data),
 }
 
 // ─── Payments ──────────────────────────────────────────
