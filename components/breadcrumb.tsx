@@ -10,6 +10,12 @@ interface BreadcrumbProps {
   items: BreadcrumbItem[]
 }
 
+function capitalizeFirst(value: string): string {
+  const v = value?.trim()
+  if (!v) return value
+  return v.charAt(0).toUpperCase() + v.slice(1)
+}
+
 export function Breadcrumb({ items }: BreadcrumbProps) {
   return (
     <nav aria-label="Breadcrumb">
@@ -31,10 +37,10 @@ export function Breadcrumb({ items }: BreadcrumbProps) {
                 href={item.href}
                 className="text-muted-foreground hover:text-primary transition-colors"
               >
-                {item.label}
+                {capitalizeFirst(item.label)}
               </Link>
             ) : (
-              <span className="text-foreground font-medium">{item.label}</span>
+              <span className="text-foreground font-medium">{capitalizeFirst(item.label)}</span>
             )}
           </li>
         ))}

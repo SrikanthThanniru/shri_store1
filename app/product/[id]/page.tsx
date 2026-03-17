@@ -129,6 +129,19 @@ export default function ProductPage() {
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0
 
+  const capitalizeFirst = (value: string) => {
+    const v = value?.trim()
+    if (!v) return value
+    return v.charAt(0).toUpperCase() + v.slice(1)
+  }
+
+  const dimensionsText =
+    product.dimensions
+      ? `Size: ${product.dimensions.length ?? "-"}×${product.dimensions.breadth ?? "-"}×${product.dimensions.height ?? "-"} cm · Weight: ${
+          product.dimensions.weight ?? "-"
+        } kg`
+      : ""
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -182,11 +195,11 @@ export default function ProductPage() {
                 href={`/category/${product.category.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-')}`}
                 className="text-[10px] sm:text-sm text-primary hover:underline"
               >
-                {product.category}
+                {capitalizeFirst(product.category)}
               </Link>
 
               <h1 className="text-lg sm:text-2xl md:text-3xl font-serif font-bold text-foreground mt-1 mb-2 sm:mt-2 sm:mb-4 leading-tight">
-                {product.name}
+                {capitalizeFirst(product.name)}
               </h1>
 
               {(product.ratingsAverage ?? 0) > 0 && (
@@ -301,6 +314,12 @@ export default function ProductPage() {
 
             <TabsContent value="description" className="py-6">
               <div className="prose prose-neutral max-w-none">
+                {dimensionsText && (
+                  <div className="not-prose mb-4 rounded-md border border-border bg-secondary px-4 py-3">
+                    <div className="text-sm font-semibold text-foreground">Dimensions</div>
+                    <div className="text-sm text-muted-foreground">{dimensionsText}</div>
+                  </div>
+                )}
                 <p className="text-muted-foreground leading-relaxed whitespace-pre-line">{product.description}</p>
                 {product.features && product.features.length > 0 && (
                   <>

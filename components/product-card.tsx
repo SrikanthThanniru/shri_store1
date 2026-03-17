@@ -31,6 +31,12 @@ interface ProductCardProps {
   className?: string
 }
 
+function capitalizeFirst(value: string): string {
+  const v = value?.trim()
+  if (!v) return value
+  return v.charAt(0).toUpperCase() + v.slice(1)
+}
+
 export function ProductCard({ product, className }: ProductCardProps) {
   const { addItem } = useCart()
   const discount =
@@ -95,7 +101,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
       <div className="p-3 sm:p-4 flex flex-col flex-1">
         <Link href={productHref}>
           <h3 className="text-[11px] sm:text-sm font-medium text-foreground leading-snug line-clamp-1 sm:line-clamp-2 hover:text-primary transition-colors">
-            {product.name}
+            {capitalizeFirst(product.name)}
           </h3>
         </Link>
 

@@ -163,9 +163,27 @@ export default function CheckoutPage() {
 
   const handleApplyCoupon = async () => {
     try {
-      const data = await couponsApi.validate(couponCode, subtotal)
-      setDiscount(data.discount)
-      toast.success(`Coupon applied! You save ₹${data.discount}`)
+      const totalBeforeDiscount = subtotal + shipping
+      const data = await couponsApi.validate(couponCode, totalBeforeDiscount)
+      const coupon = data.coupon
+      if (!coupon) {
+        setDiscount(0)
+        toast.error(data.message || "Invalid coupon")
+        return
+      }
+
+      let amount = 0
+      if (coupon.calculatedDiscount != null) {
+        amount = Number(coupon.calculatedDiscount) || 0
+      } else if (coupon.discountType === "percentage") {
+        // No round-off: keep exact percentage discount
+        amount = (totalBeforeDiscount * coupon.discountValue) / 100
+      } else {
+        amount = coupon.discountValue
+      }
+
+      setDiscount(amount)
+      toast.success(`Coupon applied! You save ₹${amount.toLocaleString("en-IN")}`)
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Invalid coupon")
     }

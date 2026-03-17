@@ -52,7 +52,8 @@ export default function CartPage() {
   const applyCoupon = async () => {
     if (!couponCode.trim()) return
     try {
-      const data = await couponsApi.validate(couponCode, subtotal)
+      const totalBeforeDiscount = subtotal + shipping
+      const data = await couponsApi.validate(couponCode, totalBeforeDiscount)
       const coupon = data.coupon
 
       let amount = 0
@@ -61,13 +62,14 @@ export default function CartPage() {
         if (!Number.isNaN(calc) && calc > 0) {
           amount = calc
         } else if (coupon.discountType === "percentage") {
-          amount = Math.round((subtotal * coupon.discountValue) / 100)
+          // No round-off: keep exact percentage discount
+          amount = (totalBeforeDiscount * coupon.discountValue) / 100
         } else {
           amount = coupon.discountValue
         }
       }
 
-      amount = Number.isNaN(Number(amount)) ? 0 : Math.min(Number(amount), subtotal)
+      amount = Number.isNaN(Number(amount)) ? 0 : Math.min(Number(amount), totalBeforeDiscount)
       setDiscount(amount)
       setCouponApplied(true)
       if (amount > 0) {
