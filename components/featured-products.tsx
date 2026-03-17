@@ -15,12 +15,19 @@ function mapProduct(p: Product) {
     slug: p.slug,
     price: p.price,
     originalPrice: p.originalPrice,
+    discountPercent: p.discountPercent,
     image: getProductImage(p),
     category: p.category,
     rating: p.ratingsAverage || 0,
     reviewCount: p.ratingsCount || 0,
     isEnergised: p.isEnergised,
     inStock: p.stockStatus === "in-stock",
+    description: p.description,
+    dimensionsText: p.dimensions
+      ? `Size: ${p.dimensions.length ?? "-"}×${p.dimensions.breadth ?? "-"}×${p.dimensions.height ?? "-"} cm · Weight: ${
+          p.dimensions.weight ?? "-"
+        } kg`
+      : undefined,
   }
 }
 

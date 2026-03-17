@@ -107,7 +107,8 @@ export function Header() {
                 <>
                   <DropdownMenuItem asChild><Link href="/login">Login / Sign Up</Link></DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild><Link href="/track-order">Track Order</Link></DropdownMenuItem>
+                  {/* Guests should login before tracking */}
+                  <DropdownMenuItem asChild><Link href="/login">Track Order</Link></DropdownMenuItem>
                 </>
               )}
             </DropdownMenuContent>
@@ -195,7 +196,8 @@ export function Header() {
                   <>
                     <DropdownMenuItem asChild><Link href="/login">Login / Sign Up</Link></DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild><Link href="/track-order">Track Order</Link></DropdownMenuItem>
+                    {/* Guests should login before tracking */}
+                    <DropdownMenuItem asChild><Link href="/login">Track Order</Link></DropdownMenuItem>
                   </>
                 )}
               </DropdownMenuContent>

@@ -182,7 +182,7 @@ function OrderConfirmationContent() {
             {/* Actions */}
             <div className="flex flex-col sm:flex-row gap-4">
               <Button asChild className="flex-1 gap-2">
-                <Link href="/track-order">
+                <Link href={`/track-order?id=${encodeURIComponent(orderId)}`}>
                   <Package className="h-4 w-4" />
                   Track Your Order
                 </Link>

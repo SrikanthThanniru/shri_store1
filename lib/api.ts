@@ -60,6 +60,7 @@ export interface Product {
   description: string
   price: number
   originalPrice?: number
+  discountPercent?: number
   category: string
   primaryImage: { public_id: string; url: string }
   additionalImages?: { public_id: string; url: string }[]
@@ -70,6 +71,12 @@ export interface Product {
   sku: string
   features?: string[]
   specifications?: Record<string, string>
+  dimensions?: {
+    length?: number
+    breadth?: number
+    height?: number
+    weight?: number
+  }
 }
 
 export interface CategoryInfo {
@@ -178,7 +185,19 @@ export const authApi = {
     api.post<{ success: boolean }>("/auth/logout").then((r) => r.data),
 
   updateProfile: (data: Partial<User>) =>
-    api.put<{ success: boolean; user: User }>("/auth/profile", data).then((r) => r.data),
+    api.put<{ success: boolean; user: User }>("/auth/update-profile", data).then((r) => r.data),
+
+  upsertAddress: (data: {
+    addressId?: string
+    label?: string
+    line1: string
+    line2?: string
+    city: string
+    state: string
+    pincode: string
+    isDefault?: boolean
+  }) =>
+    api.put<{ success: boolean; addresses: Address[] }>("/auth/addresses", data).then((r) => r.data),
 }
 
 // ─── Products ──────────────────────────────────────────
@@ -307,7 +326,13 @@ export const paymentsApi = {
 // ─── Coupons ───────────────────────────────────────────
 export const couponsApi = {
   validate: (code: string, cartTotal: number) =>
-    api.post<{ success: boolean; discount: number; message: string }>("/coupons/validate", { code, cartTotal }).then((r) => r.data),
+    api
+      .post<{
+        success: boolean
+        message?: string
+        coupon?: { code: string; discountType: "flat" | "percentage"; discountValue: number; calculatedDiscount?: number }
+      }>("/coupons/validate", { code, cartTotal })
+      .then((r) => r.data),
 }
 
 // ─── Banners ───────────────────────────────────────────

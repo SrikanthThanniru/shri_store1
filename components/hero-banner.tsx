@@ -143,14 +143,16 @@ export function HeroBanner() {
               <div
                 className="absolute inset-0 pointer-events-none"
                 style={{
+                  // Keep a slight dark overlay all the way to the right edge
+                  // so no light "partition" line can appear at 1440px laptops.
                   background: `linear-gradient(to right,
                     #3d0f0f 0%,
-                    rgba(61,15,15,0.92) 15%,
-                    rgba(61,15,15,0.7) 28%,
-                    rgba(61,15,15,0.4) 42%,
-                    rgba(61,15,15,0.15) 58%,
-                    transparent 75%,
-                    transparent 100%
+                    rgba(61,15,15,0.98) 18%,
+                    rgba(61,15,15,0.85) 32%,
+                    rgba(61,15,15,0.65) 50%,
+                    rgba(61,15,15,0.45) 68%,
+                    rgba(61,15,15,0.35) 82%,
+                    rgba(61,15,15,0.30) 100%
                   )`,
                 }}
               />

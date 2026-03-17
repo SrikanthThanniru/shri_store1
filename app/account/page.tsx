@@ -11,17 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import {
-  User,
-  Package,
-  MapPin,
-  LogOut,
-  ChevronRight,
-  Eye,
-  RotateCcw,
-  Truck,
-  Loader2,
-} from "lucide-react"
+import { User, Package, MapPin, LogOut, RotateCcw, Truck, Loader2, Pencil } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { authApi } from "@/lib/api"
 import { toast } from "sonner"
@@ -33,6 +23,16 @@ export default function AccountPage() {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [phone, setPhone] = useState("")
+  const [editingAddressId, setEditingAddressId] = useState<string | null>(null)
+  const [addressForm, setAddressForm] = useState({
+    label: "",
+    line1: "",
+    line2: "",
+    city: "",
+    state: "",
+    pincode: "",
+  })
+  const [addressSaving, setAddressSaving] = useState(false)
 
   // Pre-fill form when user loads
   useState(() => {
@@ -65,6 +65,44 @@ export default function AccountPage() {
   const handleDeleteAddress = async (_id: string) => {
     // Address deletion API not available yet – show a friendly message.
     toast.info("Address removal will be available soon.")
+  }
+
+  const startEditAddress = (id: string) => {
+    const addr = user?.addresses?.find((a) => a._id === id)
+    if (!addr) return
+    setEditingAddressId(id)
+    setAddressForm({
+      label: addr.label || "Shipping",
+      line1: addr.line1,
+      line2: addr.line2 || "",
+      city: addr.city,
+      state: addr.state,
+      pincode: addr.pincode,
+    })
+  }
+
+  const handleSaveAddress = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingAddressId) return
+    setAddressSaving(true)
+    try {
+      await authApi.upsertAddress({
+        addressId: editingAddressId,
+        label: addressForm.label,
+        line1: addressForm.line1,
+        line2: addressForm.line2 || undefined,
+        city: addressForm.city,
+        state: addressForm.state,
+        pincode: addressForm.pincode,
+      })
+      await refreshUser()
+      toast.success("Address updated")
+      setEditingAddressId(null)
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to update address")
+    } finally {
+      setAddressSaving(false)
+    }
   }
 
   if (loading) {
@@ -136,7 +174,7 @@ export default function AccountPage() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2"><Label>Name</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
                         <div className="space-y-2"><Label>Email</Label><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
-                        <div className="space-y-2"><Label>Phone</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} disabled /></div>
+                        <div className="space-y-2"><Label>Phone</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
                       </div>
                       <Button type="submit" disabled={saving}>
                         {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
@@ -148,43 +186,124 @@ export default function AccountPage() {
 
                 <TabsContent value="addresses">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {user?.addresses?.map((address) => (
-                      <div
-                        key={address._id || address.label || address.line1}
-                        className="bg-card rounded-lg border border-border p-6"
-                      >
-                        <div className="flex items-start justify-between mb-4">
-                          <div>
-                            <h4 className="font-medium text-foreground">
-                              {address.label || "Shipping Address"}
-                            </h4>
-                            <p className="text-xs text-muted-foreground mt-0.5">
-                              {user.name}
-                              {user.phone ? ` \u2022 ${user.phone}` : ""}
-                            </p>
+                    {user?.addresses?.map((address) => {
+                      const isEditing = editingAddressId === address._id
+                      return (
+                        <div
+                          key={address._id || address.label || address.line1}
+                          className="bg-card rounded-lg border border-border p-6"
+                        >
+                          <div className="flex items-start justify-between mb-4">
+                            <div>
+                              <h4 className="font-medium text-foreground flex items-center gap-2">
+                                {address.label || "Shipping Address"}
+                                {address._id && (
+                                  <button
+                                    type="button"
+                                    onClick={() => startEditAddress(address._id!)}
+                                    className="text-xs text-muted-foreground hover:text-primary inline-flex items-center gap-1"
+                                  >
+                                    <Pencil className="h-3 w-3" />
+                                    Edit
+                                  </button>
+                                )}
+                              </h4>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                {user.name}
+                                {user.phone ? ` \u2022 ${user.phone}` : ""}
+                              </p>
+                            </div>
+                            {address.isDefault && <Badge variant="secondary">Default</Badge>}
                           </div>
-                          {address.isDefault && <Badge variant="secondary">Default</Badge>}
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-1">{address.line1}</p>
-                        {address.line2 && (
-                          <p className="text-sm text-muted-foreground mb-1">{address.line2}</p>
-                        )}
-                        <p className="text-sm text-muted-foreground mb-1">
-                          {address.city}, {address.state} - {address.pincode}
-                        </p>
-                        <div className="flex gap-2 mt-3">
-                          {!address.isDefault && address._id && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteAddress(address._id!)}
-                            >
-                              Remove
-                            </Button>
+
+                          {isEditing ? (
+                            <form onSubmit={handleSaveAddress} className="space-y-2 text-sm">
+                              <div className="space-y-1">
+                                <Label className="text-xs">Label</Label>
+                                <Input
+                                  value={addressForm.label}
+                                  onChange={(e) => setAddressForm((f) => ({ ...f, label: e.target.value }))}
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs">Address Line 1</Label>
+                                <Input
+                                  value={addressForm.line1}
+                                  onChange={(e) => setAddressForm((f) => ({ ...f, line1: e.target.value }))}
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs">Address Line 2</Label>
+                                <Input
+                                  value={addressForm.line2}
+                                  onChange={(e) => setAddressForm((f) => ({ ...f, line2: e.target.value }))}
+                                />
+                              </div>
+                              <div className="grid grid-cols-2 gap-2">
+                                <div className="space-y-1">
+                                  <Label className="text-xs">City</Label>
+                                  <Input
+                                    value={addressForm.city}
+                                    onChange={(e) => setAddressForm((f) => ({ ...f, city: e.target.value }))}
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <Label className="text-xs">State</Label>
+                                  <Input
+                                    value={addressForm.state}
+                                    onChange={(e) => setAddressForm((f) => ({ ...f, state: e.target.value }))}
+                                  />
+                                </div>
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs">PIN Code</Label>
+                                <Input
+                                  value={addressForm.pincode}
+                                  onChange={(e) => setAddressForm((f) => ({ ...f, pincode: e.target.value }))}
+                                />
+                              </div>
+                              <div className="flex gap-2 pt-2">
+                                <Button type="submit" size="sm" disabled={addressSaving}>
+                                  {addressSaving ? (
+                                    <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                                  ) : null}
+                                  Save
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setEditingAddressId(null)}
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
+                            </form>
+                          ) : (
+                            <>
+                              <p className="text-sm text-muted-foreground mb-1">{address.line1}</p>
+                              {address.line2 && (
+                                <p className="text-sm text-muted-foreground mb-1">{address.line2}</p>
+                              )}
+                              <p className="text-sm text-muted-foreground mb-1">
+                                {address.city}, {address.state} - {address.pincode}
+                              </p>
+                              <div className="flex gap-2 mt-3">
+                                {!address.isDefault && address._id && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleDeleteAddress(address._id!)}
+                                  >
+                                    Remove
+                                  </Button>
+                                )}
+                              </div>
+                            </>
                           )}
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                     {(!user?.addresses || user.addresses.length === 0) && (
                       <p className="text-muted-foreground col-span-2 text-center py-8">
                         No saved addresses. Addresses are saved when you place an order.

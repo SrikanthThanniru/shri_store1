@@ -21,6 +21,9 @@ interface Product {
   reviewCount: number
   isEnergised?: boolean
   inStock: boolean
+  description?: string
+  dimensionsText?: string
+  discountPercent?: number
 }
 
 interface ProductCardProps {
@@ -30,9 +33,12 @@ interface ProductCardProps {
 
 export function ProductCard({ product, className }: ProductCardProps) {
   const { addItem } = useCart()
-  const discount = product.originalPrice
-    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
-    : 0
+  const discount =
+    typeof product.discountPercent === "number"
+      ? Math.round(product.discountPercent)
+      : product.originalPrice
+        ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+        : 0
 
   const productHref = `/product/${product.slug || product.id}`
 
@@ -58,7 +64,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
   }
 
   return (
-    <div className={cn("group relative bg-card rounded-lg overflow-hidden border border-border", className)}>
+    <div className={cn("group relative bg-card rounded-lg overflow-hidden border border-border flex flex-col", className)}>
       <Link href={productHref} className="block relative aspect-[5/4] sm:aspect-square overflow-hidden">
         <Image
           src={product.image}
@@ -86,12 +92,24 @@ export function ProductCard({ product, className }: ProductCardProps) {
         </div>
       </Link>
 
-      <div className="p-3 sm:p-4">
+      <div className="p-3 sm:p-4 flex flex-col flex-1">
         <Link href={productHref}>
           <h3 className="text-[11px] sm:text-sm font-medium text-foreground leading-snug line-clamp-1 sm:line-clamp-2 hover:text-primary transition-colors">
             {product.name}
           </h3>
         </Link>
+
+        {product.description && (
+          <p className="mt-1 text-[10px] sm:text-xs text-muted-foreground line-clamp-2">
+            {product.description}
+          </p>
+        )}
+
+        {product.dimensionsText && (
+          <p className="mt-0.5 text-[9px] sm:text-[11px] text-muted-foreground">
+            {product.dimensionsText}
+          </p>
+        )}
 
         <div className="flex items-baseline gap-1.5 sm:gap-2 mt-1 mb-2 sm:mb-3">
           <span className="text-[13px] sm:text-lg font-bold text-foreground">
@@ -104,14 +122,16 @@ export function ProductCard({ product, className }: ProductCardProps) {
           )}
         </div>
 
-        <Button
-          className="w-full gap-1.5 sm:gap-2 text-[11px] sm:text-sm h-8 sm:h-10 rounded-md"
-          disabled={!product.inStock}
-          onClick={handleAddToCart}
-        >
-          <ShoppingCart className="h-3 w-3 sm:h-4 sm:w-4" />
-          {product.inStock ? "Add to Cart" : "Out of Stock"}
-        </Button>
+        <div className="mt-auto pt-2">
+          <Button
+            className="w-full gap-1.5 sm:gap-2 text-[11px] sm:text-sm h-8 sm:h-10 rounded-md"
+            disabled={!product.inStock}
+            onClick={handleAddToCart}
+          >
+            <ShoppingCart className="h-3 w-3 sm:h-4 sm:w-4" />
+            {product.inStock ? "Add to Cart" : "Out of Stock"}
+          </Button>
+        </div>
       </div>
     </div>
   )

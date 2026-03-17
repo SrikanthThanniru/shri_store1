@@ -17,7 +17,7 @@ export default function CartPage() {
   const { items, loading, updateItem, removeItem } = useCart()
   const [couponCode, setCouponCode] = useState("")
   const [couponApplied, setCouponApplied] = useState(false)
-  const [discount, setDiscount] = useState(0)
+  const [discount, setDiscount] = useState<number>(0)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
 
   const handleUpdateQuantity = async (itemId: string, newQuantity: number) => {
@@ -53,9 +53,28 @@ export default function CartPage() {
     if (!couponCode.trim()) return
     try {
       const data = await couponsApi.validate(couponCode, subtotal)
-      setDiscount(data.discount)
+      const coupon = data.coupon
+
+      let amount = 0
+      if (coupon) {
+        const calc = Number(coupon.calculatedDiscount)
+        if (!Number.isNaN(calc) && calc > 0) {
+          amount = calc
+        } else if (coupon.discountType === "percentage") {
+          amount = Math.round((subtotal * coupon.discountValue) / 100)
+        } else {
+          amount = coupon.discountValue
+        }
+      }
+
+      amount = Number.isNaN(Number(amount)) ? 0 : Math.min(Number(amount), subtotal)
+      setDiscount(amount)
       setCouponApplied(true)
-      toast.success(`Coupon applied! You save ₹${data.discount.toLocaleString('en-IN')}`)
+      if (amount > 0) {
+        toast.success(`Coupon applied! You save ₹${amount.toLocaleString('en-IN')}`)
+      } else {
+        toast.success("Coupon applied.")
+      }
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Invalid coupon code")
     }
@@ -158,8 +177,10 @@ export default function CartPage() {
                     </div>
                     <Button variant="outline" onClick={applyCoupon} disabled={couponApplied}>{couponApplied ? "Applied" : "Apply"}</Button>
                   </div>
-                  {couponApplied && (
-                    <p className="text-sm text-green-600 mt-2">Coupon applied! You save ₹{discount.toLocaleString('en-IN')}</p>
+                  {couponApplied && discount > 0 && (
+                    <p className="text-sm text-green-600 mt-2">
+                      Coupon applied! You save ₹{discount.toLocaleString('en-IN')}
+                    </p>
                   )}
                 </div>
                 <div className="space-y-3 border-t border-border pt-4">

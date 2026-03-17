@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, Suspense } from "react"
 import Link from "next/link"
-import { useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Breadcrumb } from "@/components/breadcrumb"
@@ -21,6 +21,7 @@ import {
   Clock,
 } from "lucide-react"
 import { ordersApi, type OrderTracking, type TrackStatus } from "@/lib/api"
+import { useAuth } from "@/lib/auth-context"
 import { toast } from "sonner"
 
 const STATUS_STEPS: { key: TrackStatus | "processing" | "confirmed"; label: string; icon: React.ReactNode }[] = [
@@ -48,7 +49,9 @@ function isStepActive(stepKey: string, orderStatus: string): boolean {
 }
 
 function TrackContent() {
+  const router = useRouter()
   const searchParams = useSearchParams()
+  const { isLoggedIn } = useAuth()
   const initialId = searchParams.get("id") || ""
   const [orderId, setOrderId] = useState(initialId)
   const [result, setResult] = useState<OrderTracking | null>(null)
@@ -79,8 +82,13 @@ function TrackContent() {
   }, [fetchStatus])
 
   useEffect(() => {
-    if (initialId) handleTrackById(initialId)
-  }, [initialId])
+    if (!initialId) return
+    if (!isLoggedIn) {
+      router.push("/login")
+      return
+    }
+    handleTrackById(initialId)
+  }, [initialId, isLoggedIn, handleTrackById, router])
 
   useEffect(() => {
     if (!orderId || !searched || !result) return
@@ -90,6 +98,10 @@ function TrackContent() {
 
   const handleTrack = (e: React.FormEvent) => {
     e.preventDefault()
+    if (!isLoggedIn) {
+      router.push("/login")
+      return
+    }
     if (orderId.trim()) handleTrackById(orderId.trim())
   }
 
